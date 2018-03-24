@@ -31,6 +31,7 @@ int controls_allowed = 0;
 #endif
 #include "safety/safety_gm.h"
 #include "safety/safety_elm327.h"
+#include "safety/safety_tesla.h"
 
 const safety_hooks *current_hooks = &nooutput_hooks;
 
