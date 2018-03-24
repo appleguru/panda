@@ -292,6 +292,9 @@ void gpio_init() {
   //GPIOC->ODR = 0;
   GPIOB->AFR[0] = 0;
   GPIOB->AFR[1] = 0;
+  
+  // B10, configure GPIO0 as output for Tesla backup signal
+  set_gpio_mode(GPIOB, 10, MODE_OUTPUT);
 
   // C2,C3: analog mode, voltage and current sense
   set_gpio_mode(GPIOC, 2, MODE_ANALOG);
