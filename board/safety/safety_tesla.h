@@ -2,7 +2,7 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   // this should eventually read reverse state. For now track lock/unlock
   // 0x248 is MCU_lockRequest. "\x00\x00\x01\x00 \x00\x00\x00\x00" is locked. "\x00\x00\x02\x00 \x00\x00\x00\x00" is unlocked
   // RIR is CAN identity register
-  if ((to_push->RIR>>21) == 0x248 {
+  if ((to_push->RIR>>21) == 0x248) {
     //RDHR is 32bit high register . RDLR is 32bit low register (rightmost 32bits of CAN message) 
     int locked_state = (to_push->RDHR & 0xF0) >> 8;
     if (locked_state == 2) {
