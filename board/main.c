@@ -279,6 +279,9 @@ int usb_cb_control_msg(USB_Setup_TypeDef *setup, uint8_t *resp, int hardwired) {
           case SAFETY_NOOUTPUT:
             can_silent = ALL_CAN_SILENT;
             break;
+          case SAFETY_TESLA:
+            can_silent = ALL_CAN_SILENT;
+            break;
           case SAFETY_ELM327:
             can_silent = ALL_CAN_BUT_MAIN_SILENT;
             break;
