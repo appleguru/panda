@@ -15,28 +15,28 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
 
 // *** no output safety mode ***
 
-static void tesla_nooutput_init(int16_t param) {
+static void tesla_init(int16_t param) {
   controls_allowed = 0;
 }
 
-static int tesla_nooutput_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
+static int tesla_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
   return false;
 }
 
-static int tesla_nooutput_tx_lin_hook(int lin_num, uint8_t *data, int len) {
+static int tesla_tx_lin_hook(int lin_num, uint8_t *data, int len) {
   return false;
 }
 
-static int tesla_nooutput_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
+static int tesla_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
   return -1;
 }
 
-const safety_hooks tesla_nooutput_hooks = {
-  .init = tesla_nooutput_init,
+const safety_hooks tesla_hooks = {
+  .init = tesla_init,
   .rx = tesla_rx_hook,
-  .tx = tesla_nooutput_tx_hook,
-  .tx_lin = tesla_nooutput_tx_lin_hook,
-  .fwd = tesla_nooutput_fwd_hook,
+  .tx = tesla_tx_hook,
+  .tx_lin = tesla_tx_lin_hook,
+  .fwd = tesla_fwd_hook,
 };
 
 // *** all output safety mode ***

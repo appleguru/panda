@@ -56,6 +56,8 @@ typedef struct {
 #define SAFETY_TOYOTA_NOLIMITS 0x1336
 #define SAFETY_GM 3
 #define SAFETY_HONDA_BOSCH 4
+#define SAFETY_TESLA 5
+#define SAFETY_TESLA_ALLOUTPUT 0x1335
 #define SAFETY_ALLOUTPUT 0x1337
 #define SAFETY_ELM327 0xE327
 
@@ -66,6 +68,8 @@ const safety_hook_config safety_hook_registry[] = {
   {SAFETY_TOYOTA, &toyota_hooks},
   {SAFETY_TOYOTA_NOLIMITS, &toyota_nolimits_hooks},
   {SAFETY_GM, &gm_hooks},
+  {SAFETY_TESLA, &tesla_hooks},
+  {SAFETY_TESLA_ALLOUTPUT, &tesla_alloutput_hooks},
   {SAFETY_ALLOUTPUT, &alloutput_hooks},
   {SAFETY_ELM327, &elm327_hooks},
 };
