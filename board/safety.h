@@ -23,6 +23,7 @@ int controls_allowed = 0;
 #include "safety/safety_defaults.h"
 #include "safety/safety_honda.h"
 #include "safety/safety_toyota.h"
+#include "safety/safety_toyota_ipas.h"
 #include "safety/safety_gm.h"
 #include "safety/safety_elm327.h"
 #include "safety/safety_tesla.h"
@@ -53,6 +54,7 @@ typedef struct {
 #define SAFETY_NOOUTPUT 0
 #define SAFETY_HONDA 1
 #define SAFETY_TOYOTA 2
+#define SAFETY_TOYOTA_IPAS 0x1335
 #define SAFETY_TOYOTA_NOLIMITS 0x1336
 #define SAFETY_GM 3
 #define SAFETY_HONDA_BOSCH 4
@@ -67,6 +69,7 @@ const safety_hook_config safety_hook_registry[] = {
   {SAFETY_HONDA_BOSCH, &honda_bosch_hooks},
   {SAFETY_TOYOTA, &toyota_hooks},
   {SAFETY_TOYOTA_NOLIMITS, &toyota_nolimits_hooks},
+  {SAFETY_TOYOTA_IPAS, &toyota_ipas_hooks},
   {SAFETY_GM, &gm_hooks},
   {SAFETY_TESLA, &tesla_hooks},
   {SAFETY_TESLA_ALLOUTPUT, &tesla_alloutput_hooks},
