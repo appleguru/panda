@@ -23,7 +23,9 @@ int controls_allowed = 0;
 #include "safety/safety_defaults.h"
 #include "safety/safety_honda.h"
 #include "safety/safety_toyota.h"
+#ifdef PANDA
 #include "safety/safety_toyota_ipas.h"
+#endif
 #include "safety/safety_gm.h"
 #include "safety/safety_elm327.h"
 #include "safety/safety_tesla.h"
@@ -69,7 +71,9 @@ const safety_hook_config safety_hook_registry[] = {
   {SAFETY_HONDA_BOSCH, &honda_bosch_hooks},
   {SAFETY_TOYOTA, &toyota_hooks},
   {SAFETY_TOYOTA_NOLIMITS, &toyota_nolimits_hooks},
+#ifdef PANDA
   {SAFETY_TOYOTA_IPAS, &toyota_ipas_hooks},
+#endif
   {SAFETY_GM, &gm_hooks},
   {SAFETY_TESLA, &tesla_hooks},
   {SAFETY_TESLA_ALLOUTPUT, &tesla_alloutput_hooks},
