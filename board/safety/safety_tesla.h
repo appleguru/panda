@@ -1,14 +1,16 @@
 static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
-  // this should eventually read reverse state. For now track lock/unlock
-  // 0x248 is MCU_lockRequest. "\x00\x00\x01\x00 \x00\x00\x00\x00" is locked. "\x00\x00\x02\x00 \x00\x00\x00\x00" is unlocked
+  // 0x118 on bus 2 is DI_torque2. Example message on bus2, id 0x118: FF AF F4 21 91 6B
+  // 9F is park, AF is reverse, CF is drive, BF is neutral (with brake on)
+  // specifically, bits 20-22 are drive state: 001 (1) is park, 010 (2) is reverse, 011 (3) is Neutral, 100 (4) is drive
+  
   // RIR is CAN identity register
-  if ((to_push->RIR>>21) == 0x248) {
-    //RDHR is 32bit high register . RDLR is 32bit low register (rightmost 32bits of CAN message) 
-    int locked_state = (to_push->RDHR & 0xF0) >> 8;
-    if (locked_state == 2) {
-      set_gpio_output(GPIOB, 10, 0);
-    } else if (locked_state == 1) {
+  if ((to_push->RIR >> 21) == 0x118) {
+    //RDHR is 32bit high register. RDLR is 32bit low register (rightmost 32bits of CAN message) 
+    int drive_state = ((to_push->RDHR) >> 20) & 0b000000000111;
+    if (drive_state == 2) {
       set_gpio_output(GPIOB, 10, 1);
+    } else {
+      set_gpio_output(GPIOB, 10, 0);
     }
   }
 }
