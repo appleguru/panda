@@ -8,6 +8,8 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
     //RDHR is 32bit high register. RDLR is 32bit low register
     //if whole CAN message is FF AF F4 21 91 6B, RDLR contains 21 F4 AF FF
     int drive_state = (to_push->RDLR >> 12) & 0x7;
+    
+    //if the car goes into reverse, set GPIOB to high. Requires breaking out GPIOB from the panda, but this is a nice mod for the front camera switch
     if (drive_state == 2) {
       set_gpio_output(GPIOB, 10, 1);
     } else {
