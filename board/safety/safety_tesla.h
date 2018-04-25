@@ -5,8 +5,9 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   
   // RIR is CAN identity register
   if ((to_push->RIR >> 21) == 0x118) {
-    //RDHR is 32bit high register. RDLR is 32bit low register (rightmost 32bits of CAN message) 
-    int drive_state = ((to_push->RDHR) >> 20) & 0b000000000111;
+    //RDHR is 32bit high register. RDLR is 32bit low register
+    //if whole CAN message is FF AF F4 21 91 6B, RDLR contains 21 F4 AF FF
+    int drive_state = (to_push->RDLR >> 12) & 0x7;
     if (drive_state == 2) {
       set_gpio_output(GPIOB, 10, 1);
     } else {
