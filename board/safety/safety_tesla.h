@@ -9,18 +9,11 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
     //if whole CAN message is FF AF F4 21 91 6B, RDLR contains 21 F4 AF FF
     int drive_state = (to_push->RDLR >> 12) & 0x7;
     
-    // If the car goes into reverse, set OBD Pin 15 to LOW (0V). Hold high (3.3V) otherwise
-    // Stealing K-Lin pin for the front camera switch mod; intverted logic to minimize external components to switch 12V
-    // BOM: NPN transistor, 1k resistor, 2.2k resistor:
-    //                                                         /------ Reverse input on camera switch
-    //                                              /--- C ---/----- 2.2k resistor ---- +12V
-    // OBD Pin 15 (GPIOC 10) -- 1k resistor -- B --|
-    //                                              \->- E --- OBD Pin 4 (GND)
-      
+    //if the car goes into reverse, set GPIOB to high. Requires breaking out GPIOB from the panda, but this is a nice mod for the front camera switch
     if (drive_state == 2) {
-      set_gpio_output(GPIOC, 10, 0);
+      set_gpio_output(GPIOB, 10, 1);
     } else {
-      set_gpio_output(GPIOC, 10, 1);
+      set_gpio_output(GPIOB, 10, 0);
     }
   }
 }
