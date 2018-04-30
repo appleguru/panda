@@ -292,9 +292,6 @@ void gpio_init() {
   //GPIOC->ODR = 0;
   GPIOB->AFR[0] = 0;
   GPIOB->AFR[1] = 0;
-  
-  // B10, configure GPIO0 as output for Tesla backup signal
-  set_gpio_mode(GPIOB, 10, MODE_OUTPUT);
 
   // C2,C3: analog mode, voltage and current sense
   set_gpio_mode(GPIOC, 2, MODE_ANALOG);
@@ -393,9 +390,15 @@ void gpio_init() {
     set_gpio_output(GPIOA, 14, 1);
 
     // C10,C11: L-Line setup on USART 3
-    set_gpio_alternate(GPIOC, 10, GPIO_AF7_USART3);
-    set_gpio_alternate(GPIOC, 11, GPIO_AF7_USART3);
-    set_gpio_pullup(GPIOC, 11, PULL_UP);
+    //set_gpio_alternate(GPIOC, 10, GPIO_AF7_USART3);
+    //set_gpio_alternate(GPIOC, 11, GPIO_AF7_USART3);
+    //set_gpio_pullup(GPIOC, 11, PULL_UP);
+    
+    // steal L-Lin for output to tesla backup switch mod
+    // Set C11 as input (since these pins are connected together; don't want to short anything), and use C10 as output
+    set_gpio_mode(GPIOC, 11, MODE_INPUT);
+    set_gpio_mode(GPIOC, 10, MODE_OUTPUT);
+     
   #endif
 
   if (revision == PANDA_REV_C) {
