@@ -18,7 +18,6 @@
 #include "drivers/can.h"
 #include "drivers/spi.h"
 #include "drivers/timer.h"
-#include "drivers/gmlanswitch.h"
 
 
 // ***************************** fan *****************************
@@ -594,8 +593,6 @@ int main() {
     #define CURRENT_THRESHOLD 0xF00
     #define CLICKS 8
   #endif
-
-  gmlan_switch_init();
 
   for (cnt=0;;cnt++) {
     can_live = pending_can_live;

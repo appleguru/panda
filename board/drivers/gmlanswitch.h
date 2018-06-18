@@ -1,7 +1,7 @@
 #ifdef PANDA
 
 int timeout_counter = 500; //We have a 33kbps timer to send data to the GMLAN transceiver, so every 500 loops is about 15ms (just under the transceiver's 17ms timeout)
-int inverted_bit_to_send = 0; //0 or 1. 0 is high (dominant), 1 is low
+int inverted_bit_to_send = 1; //0 or 1. 0 is high (dominant), 1 is low
 
 void TIM4_IRQHandler(void) {
   if (TIM4->SR & TIM_SR_UIF) {
@@ -18,7 +18,7 @@ void TIM4_IRQHandler(void) {
   TIM4->SR = 0;
 }
 
-void gmlan_switch_init (void) {
+void gmlan_switch_init(void) {
   set_gpio_mode(GPIOB, 13, MODE_OUTPUT);
   
   // setup
@@ -32,6 +32,16 @@ void gmlan_switch_init (void) {
   // run the interrupt
   TIM4->DIER = TIM_DIER_UIE; // update interrupt
   TIM4->SR = 0;
+}
+
+void set_gmlan_digital_output(int to_set) {
+  inverted_bit_to_send = to_set;
+  
+  /*
+  puts("Writing ");
+  puth(inverted_bit_to_send);
+  puts("\n");
+  */
 }
 
 #endif

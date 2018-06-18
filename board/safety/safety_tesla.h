@@ -1,3 +1,5 @@
+#include "../drivers/gmlanswitch.h"
+
 static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   // 0x118 on bus 2 is DI_torque2. Example message on bus2, id 0x118: FF AF F4 21 91 6B
   // 9F is park, AF is reverse, CF is drive, BF is neutral (with brake on)
@@ -9,11 +11,13 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
     //if whole CAN message is FF AF F4 21 91 6B, RDLR contains 21 F4 AF FF
     int drive_state = (to_push->RDLR >> 12) & 0x7;
     
-    //if the car goes into reverse, set GPIOB to high. Requires breaking out GPIOB from the panda, but this is a nice mod for the front camera switch
+    //if the car goes into reverse, set GMLAN to 0 (high)...
     if (drive_state == 2) {
-      set_gpio_output(GPIOB, 10, 1);
+      set_gmlan_digital_output(0);
+      //puts("Got Reverse\n");
     } else {
-      set_gpio_output(GPIOB, 10, 0);
+      set_gmlan_digital_output(1);
+      //puts("Got Drive\n");
     }
   }
 }
@@ -22,6 +26,7 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
 
 static void tesla_init(int16_t param) {
   controls_allowed = 0;
+  gmlan_switch_init();
 }
 
 static int tesla_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
