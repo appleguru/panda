@@ -1,18 +1,22 @@
-#ifdef PANDA
+#define GMLAN_TICKS_PER_TIMEOUT_TICKLE 500 //15ms @ 33.3kbps
+#define GMLAN_HIGH 0 //0 is high on bus (dominant)
+#define GMLAN_LOW 1 //1 is low on bus
 
-int timeout_counter = 500; //We have a 33kbps timer to send data to the GMLAN transceiver, so every 500 loops is about 15ms (just under the transceiver's 17ms timeout)
-int inverted_bit_to_send = 1; //0 or 1. 0 is high (dominant), 1 is low
+#ifdef PANDA
+int gmlan_timeout_counter = GMLAN_TICKS_PER_TIMEOUT_TICKLE; //GMLAN transceiver times out every 17ms held high; tickle every 15ms
+
+int inverted_bit_to_send = GMLAN_HIGH; 
 
 void TIM4_IRQHandler(void) {
   if (TIM4->SR & TIM_SR_UIF) {
-    if (timeout_counter == 0) {
+    if (gmlan_timeout_counter == 0) {
       //Send a 1 (bus low) every 15ms to reset the GMLAN transceivers timeout
-      timeout_counter = 500;
-      set_gpio_output(GPIOB, 13, 1);
+      gmlan_timeout_counter = GMLAN_TICKS_PER_TIMEOUT_TICKLE;
+      set_gpio_output(GPIOB, 13, GMLAN_LOW);
     }
     else {
       set_gpio_output(GPIOB, 13, inverted_bit_to_send);
-      timeout_counter--;
+      gmlan_timeout_counter--;
     }
   }
   TIM4->SR = 0;

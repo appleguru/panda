@@ -11,12 +11,12 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
     //if whole CAN message is FF AF F4 21 91 6B, RDLR contains 21 F4 AF FF
     int drive_state = (to_push->RDLR >> 12) & 0x7;
     
-    //if the car goes into reverse, set GMLAN to 0 (high)...
+    //if the car goes into reverse, set GMLAN to 1 (low.. inverted via circuit)...
     if (drive_state == 2) {
-      set_gmlan_digital_output(0);
+      set_gmlan_digital_output(GMLAN_LOW);
       //puts("Got Reverse\n");
     } else {
-      set_gmlan_digital_output(1);
+      set_gmlan_digital_output(GMLAN_HIGH);
       //puts("Got Drive\n");
     }
   }
