@@ -144,18 +144,20 @@ void usb_cb_ep2_out(uint8_t *usbdata, int len, int hardwired) {
   }
   //if we're a LIN message
   else if (safety_tx_lin_hook(usbdata[0]-2, usbdata+1, len-1)) {
-    puts("Got a LIN message!\n");  
+    //puts("Got a LIN message!\n");  
     
     //calculate checksum
     uint8_t checksum=0,n;
     uint16_t dummy;
     
     dummy=0;
-    for(n=0;n<len;n++) {
+    //puts("USB LIN Length: "); puth(len); puts("\n");
+    for(n=1;n<len;n++) {
       dummy+=usbdata[n];
       if(dummy>0xFF) {
         dummy-=0xFF;
-      } 
+      }
+      //puts("Currect cksm: "); puth(dummy); puts("\n");
     }
     checksum=(uint8_t)(dummy);
     checksum^=0xFF;
@@ -167,13 +169,15 @@ void usb_cb_ep2_out(uint8_t *usbdata, int len, int hardwired) {
     putc(ur, 0x55);
     
     //Send ID
-    putc(ur, 0x60);
+    putc(ur, 0x3c);
     
     //send data
     for (int i = 1; i < len; i++) while (!putc(ur, usbdata[i]));
     
     //send checksum
     putc(ur, checksum);
+    puts("Sent LIN checksum: "); puth(checksum); puts("\n");
+
   }
 }
 
