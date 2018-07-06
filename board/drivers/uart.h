@@ -52,6 +52,17 @@ void uart_ring_process(uart_ring *q) {
   if (q->w_ptr_tx != q->r_ptr_tx) {
     if (sr & USART_SR_TXE) {
       q->uart->DR = q->elems_tx[q->r_ptr_tx];
+/*
+      //if we have something to send, check if we're sending LIN; send a break if we are
+      if (q == &lin1_ring || q == &lin2_ring)
+      {
+        //if we're sending lin, send a LIN break
+        if (q->elems_tx[q->r_ptr_tx] == 0x55)
+        {
+          SET_BIT(q->uart->CR1, USART_CR1_SBK);
+        }
+      }
+*/
       q->r_ptr_tx = (q->r_ptr_tx + 1) % FIFO_SIZE;
     } else {
       // push on interrupt later

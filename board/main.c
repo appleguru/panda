@@ -139,8 +139,41 @@ void usb_cb_ep2_out(uint8_t *usbdata, int len, int hardwired) {
   if (len == 0) return;
   uart_ring *ur = get_ring_by_number(usbdata[0]);
   if (!ur) return;
-  if ((usbdata[0] < 2) || safety_tx_lin_hook(usbdata[0]-2, usbdata+1, len-1)) {
+  if (usbdata[0] < 2) {
     for (int i = 1; i < len; i++) while (!putc(ur, usbdata[i]));
+  }
+  //if we're a LIN message
+  else if (safety_tx_lin_hook(usbdata[0]-2, usbdata+1, len-1)) {
+    puts("Got a LIN message!\n");  
+    
+    //calculate checksum
+    uint8_t checksum=0,n;
+    uint16_t dummy;
+    
+    dummy=0;
+    for(n=0;n<len;n++) {
+      dummy+=usbdata[n];
+      if(dummy>0xFF) {
+        dummy-=0xFF;
+      } 
+    }
+    checksum=(uint8_t)(dummy);
+    checksum^=0xFF;
+    
+    //Send a LIN break
+    SET_BIT(ur->uart->CR1, USART_CR1_SBK);
+    
+    //Send a LIN Sync (0x55)
+    putc(ur, 0x55);
+    
+    //Send ID
+    putc(ur, 0x60);
+    
+    //send data
+    for (int i = 1; i < len; i++) while (!putc(ur, usbdata[i]));
+    
+    //send checksum
+    putc(ur, checksum);
   }
 }
 
