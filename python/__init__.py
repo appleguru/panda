@@ -524,11 +524,11 @@ class Panda(object):
         print("kline send: "+ts.encode("hex"))
       self._handle.bulkWrite(2, chr(bus).encode()+ts)
       echo = self.kline_ll_recv(len(ts), bus=bus)
-      if echo != ts:
-        print("**** ECHO ERROR %d ****" % i)
-        print(binascii.hexlify(echo))
-        print(binascii.hexlify(ts))
-    assert echo == ts
+      #if echo != ts:
+      #  print("**** ECHO ERROR %d ****" % i)
+      #  print(binascii.hexlify(echo))
+      #  print(binascii.hexlify(ts))
+    #assert echo == ts
 
   def kline_recv(self, bus=2):
     msg = self.kline_ll_recv(2, bus=bus)
