@@ -143,51 +143,32 @@ void usb_cb_ep2_out(uint8_t *usbdata, int len, int hardwired) {
     for (int i = 1; i < len; i++) while (!putc(ur, usbdata[i]));
   }
   //if we're a LIN message
-  else if (safety_tx_lin_hook(usbdata[0]-2, usbdata+1, len-1)) {
-    //puts("Got a LIN message!\n");  
-   /* 
-    //calculate checksum
-    uint8_t checksum=0,n;
-    uint16_t dummy;
+  else if (safety_tx_lin_hook(usbdata[0]-2, usbdata+1, len-1) && (ur == &lin1_ring || ur == &lin2_ring)) {
+    puts("Got a LIN message over USB!\n");
     
-    dummy=0;
-    //puts("USB LIN Length: "); puth(len); puts("\n");
-    for(n=1;n<len;n++) {
-      dummy+=usbdata[n];
-      if(dummy>0xFF) {
-        dummy-=0xFF;
-      }
-      //puts("Currect cksm: "); puth(dummy); puts("\n");
+    //make our frame; assume 1st byte is the ID, rest is data:
+    LIN_FRAME_t frame_to_send;
+    
+    frame_to_send.frame_id=usbdata[1];
+    frame_to_send.data_len=len-2;
+    for(int n = 0; n < len - 2; n++)
+    {
+      frame_to_send.data[n] = usbdata[n + 2];
+      //puts("Byte to send: ");
+      //puth(frame_to_send.data[n]);
+      //puts("\n");
     }
-    checksum=(uint8_t)(dummy);
-    checksum^=0xFF;
-    */
-    //Send a LIN break
-    SET_BIT(ur->uart->CR1, USART_CR1_SBK);
     
     /*
-    
-    //Send a LIN Sync (0x55)
-    putc(ur, 0x55);
-    
-    //Send ID
-    putc(ur, 0x3c);
-    */
-    
-    puts("Sending LIN Data: SB ");
-    for (int i = 1; i < len; i++) {
-      puth(usbdata[i]);
-    }
+    puts("LIN Frame Length: ");
+    puth(frame_to_send.data_len);
     puts("\n");
     
+    puts("LIN_SendData return value: ");
+    puth(LIN_SendData(ur, &frame_to_send));
+    puts("\n");
+    */
     
-    //send data
-    for (int i = 1; i < len; i++) while (!putc(ur, usbdata[i]));
-    
-    //send checksum
-    //putc(ur, checksum);
-    //puts("Sent LIN checksum: "); puth(checksum); puts("\n");
-
   }
 }
 

@@ -1,3 +1,201 @@
+//--------------------------------------------------------------
+// LIN Defines
+//--------------------------------------------------------------
+#define  LIN_SYNC_DATA               0x55  // SyncField (do not change)
+#define  LIN_MAX_DATA                   8  // max 8 databytes
+
+//--------------------------------------------------------------
+// LIN error messages
+//--------------------------------------------------------------
+typedef enum {
+  LIN_OK  = 0,   // no error
+  LIN_WRONG_LEN, // wrong number of data
+  LIN_RX_EMPTY,  // no frame received
+  LIN_WRONG_CRC  // Checksum wrong
+}LIN_ERR_t;
+
+//--------------------------------------------------------------
+// LIN frame Struct
+//--------------------------------------------------------------
+typedef struct {
+  uint8_t frame_id;              // ID number of the frame
+  uint8_t data_len;              // number of data bytes
+  uint8_t data[LIN_MAX_DATA];    // data
+}LIN_FRAME_t;
+
+uint8_t p_LIN_makeChecksum(LIN_FRAME_t *frame);
+void USART_SendBreak(uart_ring *u);
+
+
+// --------------------------------------------------------------
+// sends data via LIN interface
+// frame:
+// frame_id = Unique ID [0x00 to 0xFF]
+// data_len = length of data to be sent
+// data [] = data to be sent
+//
+// return_value:
+// LIN_OK = Frame has been sent
+// LIN_WRONG_LEN = invalid data length
+// --------------------------------------------------------------
+LIN_ERR_t LIN_SendData(uart_ring *LIN_UART, LIN_FRAME_t *frame)
+{
+  uint8_t checksum,n;
+
+  // check the length
+  if((frame -> data_len < 1) || (frame -> data_len > LIN_MAX_DATA)) {
+    return(LIN_WRONG_LEN);
+  }   
+
+  // calculate checksum
+  checksum=p_LIN_makeChecksum(frame);
+
+  //------------------------
+  // Break-Field
+  //------------------------
+  USART_SendBreak(LIN_UART);
+
+  //------------------------
+  // Sync-Field
+  //------------------------
+  putc(LIN_UART, LIN_SYNC_DATA);
+
+  //------------------------
+  // ID-Field
+  //------------------------
+  putc(LIN_UART, frame->frame_id);
+  
+  //------------------------
+  // Data-Field [1...n]
+  //------------------------  
+  for(n=0; n < frame -> data_len; n++) {
+    putc(LIN_UART, frame -> data[n]);
+  }
+
+  //------------------------
+  // CRC-Field
+  //------------------------
+  putc(LIN_UART, checksum);
+
+  return(LIN_OK);    
+}
+
+
+// --------------------------------------------------------------
+// receives data via LIN interface
+// frame:
+// frame_id = Unique ID [0x00 to 0xFF]
+// data_len = number of data to be received
+// return:
+// data [] = data received (if LIN_OK)
+//
+// return_value:
+// LIN_OK = Frame was received
+// LIN_WRONG_LEN = wrong number of data
+// LIN_RX_EMPTY = no frame received
+// LIN_WRONG_CRC = Checksum wrong
+// --------------------------------------------------------------
+LIN_ERR_t LIN_ReceiveData(uart_ring *LIN_UART, LIN_FRAME_t *frame)
+{
+  uint32_t rx_timeout;
+  uint8_t checksum, n;
+
+  // check the length
+  if((frame -> data_len < 1) || (frame -> data_len > LIN_MAX_DATA)) {
+    return(LIN_WRONG_LEN);
+  }
+  
+  //-------------------------------
+  // Break-Field
+  //-------------------------------
+  USART_SendBreak(LIN_UART);
+
+  //-------------------------------
+  // Sync-Field
+  //-------------------------------
+  putc(LIN_UART, LIN_SYNC_DATA);
+
+  //-------------------------------
+  // ID-Field
+  //-------------------------------
+  putc(LIN_UART, frame->frame_id);
+
+/*
+
+  //-------------------------------
+  // Prepare master
+  //-------------------------------
+  LIN_MASTER.mode=RECEIVE_DATA;
+  LIN_MASTER.data_ptr=0;
+  LIN_MASTER.crc=0;
+
+  LIN_FRAME.data_len=frame->data_len;
+  LIN_FRAME.data[0]=0; 
+
+  //-------------------------------
+  // wait until frame is received
+  // or timeout
+  //-------------------------------
+  rx_timeout=0;
+  n=0;
+  do {   
+    // timeout counter
+    rx_timeout++;    
+    if(rx_timeout>LIN_RX_TIMEOUT_CNT) {
+      // leave the loop
+      break;
+    }
+    // reset timeout, at data reception
+    if(LIN_MASTER.data_ptr!=n) {
+      n=LIN_MASTER.data_ptr;
+      rx_timeout=0;
+    }
+  }while(LIN_MASTER.mode!=SEND_DATA);
+
+  //-------------------------------
+  // check if frame was received
+  //-------------------------------
+  if(LIN_MASTER.mode!=SEND_DATA) {
+    // no frame received
+    LIN_MASTER.mode=SEND_DATA;
+    // small pause
+    // so that the next frame is not sent too fast
+    p_LIN_wait_us(LIN_INTER_FRAME_DELAY);
+    return(LIN_RX_EMPTY);
+  }  
+
+  //-------------------------------
+  // copy received data
+  //-------------------------------
+  for(n=0;n<frame->data_len;n++) {
+    frame->data[n]=LIN_FRAME.data[n]; 
+  }
+  // calculate checksum
+  checksum=p_LIN_makeChecksum(frame);
+
+  //-------------------------------
+  // check if crc ok
+  //-------------------------------
+  if(LIN_MASTER.crc!=checksum) {
+    // checksum incorrect
+    // small pause
+    // so that the next frame is not sent too fast
+    p_LIN_wait_us(LIN_INTER_FRAME_DELAY);
+    return(LIN_WRONG_CRC);
+  }
+      
+  //-------------------------------
+  // data is ok
+  //-------------------------------
+  // small pause
+  // so that the next frame is not sent too fast
+  p_LIN_wait_us(LIN_INTER_FRAME_DELAY);
+
+*/
+
+  return(LIN_OK);
+}
+
 // IRQs: USART1, USART2, USART3, UART5
 
 // ***************************** serial port queues *****************************
@@ -51,18 +249,26 @@ void uart_ring_process(uart_ring *q) {
 
   if (q->w_ptr_tx != q->r_ptr_tx) {
     if (sr & USART_SR_TXE) {
+      //Add the next byte from the tx elems array to the transmit data register (DR) so the stm32 can send it out over the UART
       q->uart->DR = q->elems_tx[q->r_ptr_tx];
-/*
+
+    
+    /*
       //if we have something to send, check if we're sending LIN; send a break if we are
       if (q == &lin1_ring || q == &lin2_ring)
       {
         //if we're sending lin, send a LIN break
         if (q->elems_tx[q->r_ptr_tx] == 0x55)
         {
+          puts("Data pointer for 0x55: ");
+          puth(q->r_ptr_tx);
+          puts("\n");
           SET_BIT(q->uart->CR1, USART_CR1_SBK);
         }
       }
-*/
+      
+      */
+
       q->r_ptr_tx = (q->r_ptr_tx + 1) % FIFO_SIZE;
     } else {
       // push on interrupt later
@@ -73,6 +279,7 @@ void uart_ring_process(uart_ring *q) {
     q->uart->CR1 &= ~USART_CR1_TXEIE;
   }
 
+// if the read data register is not empty or if there is an overrun, read the data and put it into elems_rx[] (or clear the errors... which we don't do yet?)
   if (sr & USART_SR_RXNE || sr & USART_SR_ORE) {
     uint8_t c = q->uart->DR;  // TODO: can drop packets
     if (q != &esp_ring) {
@@ -312,4 +519,35 @@ void hexdump(const void *a, int l) {
     puts(" ");
   }
   puts("\n");
+}
+
+void USART_SendBreak(uart_ring *u)
+{
+    SET_BIT(u -> uart -> CR1, USART_CR1_SBK);
+}
+
+// --------------------------------------------------------------
+// internal function
+// Calculate checksum over all data
+// (classic-mode = inverted modulo256 sum)
+//
+// ret_value = checksum
+//--------------------------------------------------------------
+uint8_t p_LIN_makeChecksum(LIN_FRAME_t *frame)
+{
+  uint8_t ret_value=0, n;
+  uint16_t dummy;
+
+  // calculate checksum  
+  dummy = 0;
+  for(n = 0; n < frame -> data_len; n++) {
+    dummy += frame -> data[n];
+    if (dummy > 0xFF) {
+      dummy -= 0xFF;
+    } 
+  }
+  ret_value = (uint8_t)(dummy);
+  ret_value ^= 0xFF;
+  
+  return(ret_value);
 }

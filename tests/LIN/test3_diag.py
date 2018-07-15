@@ -33,10 +33,10 @@ while 1:
   hexdump(ret)
   
   print("Sending Diagnostic Data Block 4: SB SF 3C 60 02 B4 C0 FF FF FF FF 28:")
-  p.kline_send("\x55\x3c\x60\x02\xb4\xc0\xff\xff\xff\xff\x28", bus=send_bus, checksum=False)
+  p.kline_send("\x3c\x60\x02\xb4\xc0\xff\xff\xff\xff", bus=send_bus, checksum=False)
   
-  print("Sending Empty header for slave to respond with diag 4: SB SF 7D")
-  p.kline_send("\x55\x7D", bus=send_bus, checksum=False)
+  #print("Sending Empty header for slave to respond with diag 4: SB SF 7D")
+  #p.kline_send("\x55\x7D", bus=send_bus, checksum=False)
   
   time.sleep(0.1)
 
