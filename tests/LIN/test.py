@@ -70,9 +70,11 @@ while 1:
 
 
 
-  print("Sending Datadump1, 8 x LSE: SB SF 3C 60 06 B4 00 00 FF 00 00 E4")
+  #print("Sending Datadump1, 8 x LSE: SB SF 3C 60 06 B4 00 00 FF 00 00 E4")
   #print("Sending Datadump1, 8 x High Side Emable: SB SF 3C 60 06 B4 00 FF 00 00 00 E4")
-  p.kline_send("\x55\x3c\x60\x06\xb4\x00\x00\xff\x00\x00\xe4", bus=send_bus, checksum=False)
+  print("Sending Datadump1, 8 x Push Pull: SB SF 3C 60 06 B4 00 FF FF 00 00 E4")
+  p.kline_send("\x55\x3c\x60\x06\xb4\x00\xff\xff\x00\x00\xe4", bus=send_bus, checksum=False)
+  #p.kline_send("\x55\x3c\x60\x06\xb4\x00\x00\xff\x00\x00\xe4", bus=send_bus, checksum=False)
   #p.kline_send("\x55\x3c\x60\x06\xb4\x00\xff\x00\x00\x00\xe4", bus=send_bus, checksum=False)
   
   print("Sending Empty header for slave to respond with config: SB SF 7D")
