@@ -11,6 +11,7 @@
 #include "gpio.h"
 
 #include "drivers/uart.h"
+#include "drivers/lin.h"
 
 #include "safety.h"
 #include "provision.h"
