@@ -50,7 +50,7 @@ void TIM4_IRQHandler(void) {
       //receive frameID response
       LIN_FRAME_t frame_to_receive;
       frame_to_receive.data_len = 8;
-      frame_to_receive.frame_id = 0x7d;
+      frame_to_receive.frame_id = 0x7D; //Response PID, 0x7D = 2 bit parity + 0x3C raw ID
   
       LIN_ReceiveData(&lin1_ring, &frame_to_receive);
       puts("Received Lin frame: ");
@@ -71,7 +71,7 @@ void uja1023_init(void) {
   //LIN_FRAME_t assign_id_frame;
   assign_id_frame.has_response = 1;
   assign_id_frame.data_len = 8;
-  assign_id_frame.frame_id = 0x3c; //0x3C is for diagnostic frames
+  assign_id_frame.frame_id = 0x3C; //0x3C is for diagnostic frames
   assign_id_frame.data[0]  = 0x60; //D0, iniital node address, set to 0x60 default
   assign_id_frame.data[1]  = 0x06; //D1, protocol control info (PCI); should be 0x06
   assign_id_frame.data[2]  = 0xB1; //D2, service id (SID); should be 0xB4
@@ -85,7 +85,7 @@ void uja1023_init(void) {
   //LIN_FRAME_t io_cfg_1_frame;
   io_cfg_1_frame.has_response = 1;
   io_cfg_1_frame.data_len = 8;
-  io_cfg_1_frame.frame_id = 0x3c; //0x3C is for diagnostic frames
+  io_cfg_1_frame.frame_id = 0x3C; //0x3C is for diagnostic frames
   io_cfg_1_frame.data[0]  = 0x60; //D0, slave node address (NAD) (default 0x60)
   io_cfg_1_frame.data[1]  = 0x06; //D1, protocol control info (PCI); should be 0x06
   io_cfg_1_frame.data[2]  = 0xB4; //D2, service id (SID); should be 0xB4
@@ -99,7 +99,7 @@ void uja1023_init(void) {
   //LIN_FRAME_t io_cfg_2_frame;
   io_cfg_2_frame.has_response = 1;
   io_cfg_2_frame.data_len = 8;
-  io_cfg_2_frame.frame_id = 0x3c; //0x3C is for diagnostic frames
+  io_cfg_2_frame.frame_id = 0x3C; //0x3C is for diagnostic frames
   io_cfg_2_frame.data[0]  = 0x60; //D0, slave node address (NAD) (default 0x60)
   io_cfg_2_frame.data[1]  = 0x06; //D1, protocol control info (PCI); should be 0x06
   io_cfg_2_frame.data[2]  = 0xB4; //D2, service id (SID); should be 0xB4
@@ -113,7 +113,7 @@ void uja1023_init(void) {
   //LIN_FRAME_t io_cfg_3_frame;
   io_cfg_3_frame.has_response = 1;
   io_cfg_3_frame.data_len = 8;
-  io_cfg_3_frame.frame_id = 0x3c; //0x3C is for diagnostic frames
+  io_cfg_3_frame.frame_id = 0x3C; //0x3C is for diagnostic frames
   io_cfg_3_frame.data[0]  = 0x60; //D0, slave node address (NAD) (default 0x60)
   io_cfg_3_frame.data[1]  = 0x04; //D1, protocol control info (PCI); should be 0x04
   io_cfg_3_frame.data[2]  = 0xB4; //D2, service id (SID); should be 0xB4
@@ -128,7 +128,7 @@ void uja1023_init(void) {
   //LIN_FRAME_t io_cfg_4_frame;
   io_cfg_4_frame.has_response = 1;
   io_cfg_4_frame.data_len = 8;
-  io_cfg_4_frame.frame_id = 0x3c; //0x3C is for diagnostic frames
+  io_cfg_4_frame.frame_id = 0x3C; //0x3C is for diagnostic frames
   io_cfg_4_frame.data[0]  = 0x60; //D0, slave node address (NAD) (default 0x60)
   io_cfg_4_frame.data[1]  = 0x02; //D1, protocol control info (PCI); should be 0x02
   io_cfg_4_frame.data[2]  = 0xB4; //D2, service id (SID); should be 0xB4

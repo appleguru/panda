@@ -126,12 +126,14 @@ LIN_ERR_t LIN_ReceiveData(uart_ring *LIN_UART, LIN_FRAME_t *frame)
   // copy received data
   //-------------------------------
   
-  uint8_t *resp;
+  //TODO: Get receive working. Do I need to add a small delay here?
+  
+  uint8_t *resp = 0;
   int resp_len = 0;
   
   while ((resp_len < frame -> data_len) && getc(LIN_UART, (char*)&resp[resp_len])) {
     ++resp_len;
-    frame->data[n]=resp;
+    frame->data[resp_len]=resp[resp_len];
   }
 
   return(LIN_OK);
