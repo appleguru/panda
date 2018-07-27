@@ -118,74 +118,43 @@ while 1:
   hexdump(ret)
 
 
-#   print("Sending Diagnostic Data Block 4: SB SF 3C 60 02 B4 C0 FF FF FF FF 28:")
-#   p.kline_send("\x55\x3c\x60\x02\xb4\xc0\xff\xff\xff\xff\x28", bus=send_bus, checksum=False)
-#   
-#   print("Sending Empty header for slave to respond with diag 4: SB SF 7D")
-#   p.kline_send("\x55\x7D", bus=send_bus, checksum=False)
-#   
-#   time.sleep(0.2)
-# 
-#   #LIN RECV
-#   ret = p.kline_drain(bus=send_bus)
-#   print("RET Data diag 4:")
-#   hexdump(ret)
-
-
-
-  print("Sending Read by identifier request (optional) SB SF 3C 60 06 B2 00 11 00 00 00 D5:")
-  p.kline_send("\x55\x3c\x60\x06\xb2\x00\x11\x00\x00\x00\xd5", bus=send_bus, checksum=False)
+  print("Sending Diagnostic Data Block 4: SB SF 3C 60 02 B4 C0 FF FF FF FF 28:")
+  p.kline_send("\x55\x3c\x60\x02\xb4\xc0\xff\xff\xff\xff\x28", bus=send_bus, checksum=False)
   
-  print("Sending Empty header for slave to respond with id request postive resp: SB SF 7D")
+  print("Sending Empty header for slave to respond with diag 4: SB SF 7D")
   p.kline_send("\x55\x7D", bus=send_bus, checksum=False)
   
   time.sleep(0.2)
 
   #LIN RECV
   ret = p.kline_drain(bus=send_bus)
-  print("RET Data id request positive response:")
+  print("RET Data diag 4:")
   hexdump(ret)
+
+
+
+#   print("Sending Read by identifier request (optional) SB SF 3C 60 06 B2 00 11 00 00 00 D5:")
+#   p.kline_send("\x55\x3c\x60\x06\xb2\x00\x11\x00\x00\x00\xd5", bus=send_bus, checksum=False)
+#   
+#   print("Sending Empty header for slave to respond with id request postive resp: SB SF 7D")
+#   p.kline_send("\x55\x7D", bus=send_bus, checksum=False)
+#   
+#   time.sleep(0.2)
+# 
+#   LIN RECV
+#   ret = p.kline_drain(bus=send_bus)
+#   print("RET Data id request positive response:")
+#   hexdump(ret)
   
-  print("P0 on: SB SF C4 01 80 7E")
-  p.kline_send("\x55\xc4\x01\x80\x7e", bus=send_bus, checksum=False)
-  time.sleep(0.2)
-  print("Any return?:")
-  hexdump(ret)
-  print("P1 on: SB SF C4 02 80 7D")
-  p.kline_send("\x55\xc4\x02\x80\x7d", bus=send_bus, checksum=False)
-  time.sleep(0.2)
-  print("Any return?:")
-  hexdump(ret)
-  print("P2 on: SB SF C4 04 80 7B")
-  p.kline_send("\x55\xc4\x04\x80\x7b", bus=send_bus, checksum=False)
-  time.sleep(0.2)
-  print("Any return?:")
-  hexdump(ret)
-  print("P3 on: SB SF C4 08 80 77")
-  p.kline_send("\x55\xc4\x08\x80\x77", bus=send_bus, checksum=False)
-  time.sleep(0.2)
-  print("Any return?:")
-  hexdump(ret)
-  print("P4 on: SB SF C4 10 80 6F")
-  p.kline_send("\x55\xc4\x10\x80\x6f", bus=send_bus, checksum=False)
-  time.sleep(0.2)
-  print("Any return?:")
-  hexdump(ret)
-  print("P5 on: SB SF C4 20 80 5F")
-  p.kline_send("\x55\xc4\x20\x80\x5f", bus=send_bus, checksum=False)
-  time.sleep(0.2)
-  print("Any return?:")
-  hexdump(ret)
-  print("P6 on: SB SF C4 40 80 3F")
-  p.kline_send("\x55\xc4\x40\x80\x3f", bus=send_bus, checksum=False)
-  time.sleep(0.2)
-  print("Any return?:")
-  hexdump(ret)
-  print("P7 on: SB SF C4 80 80 FE")
-  p.kline_send("\x55\xc4\x80\x80\xfe", bus=send_bus, checksum=False)
-  time.sleep(0.2)
-  print("Any return?:")
-  hexdump(ret)
+  while 1:
+    print("P1 on: SB SF C4 02 80 7D")
+    p.kline_send("\x55\xc4\x02\x80\x7d", bus=send_bus, checksum=False)
+    time.sleep(1)
+  
+    print("All off: SB SF C4 00 80 7F")
+    p.kline_send("\x55\xc4\x00\x80\x7f", bus=send_bus, checksum=False)
+    time.sleep(1)
+
   exit(0)
 
 
