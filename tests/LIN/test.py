@@ -89,6 +89,7 @@ while 1:
   
   
   
+  #print("Sending Datadump2, no capture and threshold select (optional) SB SF 3C 60 06 B4 40 00 00 00 00 A4: ")
   print("Sending Datadump2, no capture and threshold select (optional) SB SF 3C 60 06 B4 40 00 00 00 00 A4: ")
   p.kline_send("\x55\x3c\x60\x06\xb4\x40\x00\x00\x00\x00\xa4", bus=send_bus, checksum=False)
   
@@ -150,10 +151,24 @@ while 1:
     print("P1 on: SB SF C4 02 80 7D")
     p.kline_send("\x55\xc4\x02\x80\x7d", bus=send_bus, checksum=False)
     time.sleep(1)
+    
+    p.kline_send("\x55\x3c\x60\x02\xb4\xc0\xff\xff\xff\xff\x28", bus=send_bus, checksum=False)
+    p.kline_send("\x55\x7D", bus=send_bus, checksum=False)
+    time.sleep(0.2)
+    ret = p.kline_drain(bus=send_bus)
+    print("RET Data diag 4:")
+    hexdump(ret)
   
     print("All off: SB SF C4 00 80 7F")
     p.kline_send("\x55\xc4\x00\x80\x7f", bus=send_bus, checksum=False)
     time.sleep(1)
+    
+    p.kline_send("\x55\x3c\x60\x02\xb4\xc0\xff\xff\xff\xff\x28", bus=send_bus, checksum=False)
+    p.kline_send("\x55\x7D", bus=send_bus, checksum=False)
+    time.sleep(0.2)
+    ret = p.kline_drain(bus=send_bus)
+    print("RET Data diag 4:")
+    hexdump(ret)
 
   exit(0)
 
