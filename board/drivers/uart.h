@@ -4,6 +4,7 @@
 #define  LIN_SYNC_DATA               0x55  // SyncField (do not change)
 #define  LIN_MAX_DATA                   8  // max 8 databytes
 
+
 //--------------------------------------------------------------
 // LIN error messages
 //--------------------------------------------------------------
@@ -18,6 +19,7 @@ typedef enum {
 // LIN frame Struct
 //--------------------------------------------------------------
 typedef struct {
+  uint8_t has_response;          // set to 1 if message expects a response; else set to 0
   uint8_t frame_id;              // ID number of the frame
   uint8_t data_len;              // number of data bytes
   uint8_t data[LIN_MAX_DATA];    // data
@@ -120,78 +122,17 @@ LIN_ERR_t LIN_ReceiveData(uart_ring *LIN_UART, LIN_FRAME_t *frame)
   //-------------------------------
   putc(LIN_UART, frame->frame_id);
 
-/*
-
-  //-------------------------------
-  // Prepare master
-  //-------------------------------
-  LIN_MASTER.mode=RECEIVE_DATA;
-  LIN_MASTER.data_ptr=0;
-  LIN_MASTER.crc=0;
-
-  LIN_FRAME.data_len=frame->data_len;
-  LIN_FRAME.data[0]=0; 
-
-  //-------------------------------
-  // wait until frame is received
-  // or timeout
-  //-------------------------------
-  rx_timeout=0;
-  n=0;
-  do {   
-    // timeout counter
-    rx_timeout++;    
-    if(rx_timeout>LIN_RX_TIMEOUT_CNT) {
-      // leave the loop
-      break;
-    }
-    // reset timeout, at data reception
-    if(LIN_MASTER.data_ptr!=n) {
-      n=LIN_MASTER.data_ptr;
-      rx_timeout=0;
-    }
-  }while(LIN_MASTER.mode!=SEND_DATA);
-
-  //-------------------------------
-  // check if frame was received
-  //-------------------------------
-  if(LIN_MASTER.mode!=SEND_DATA) {
-    // no frame received
-    LIN_MASTER.mode=SEND_DATA;
-    // small pause
-    // so that the next frame is not sent too fast
-    p_LIN_wait_us(LIN_INTER_FRAME_DELAY);
-    return(LIN_RX_EMPTY);
-  }  
-
   //-------------------------------
   // copy received data
   //-------------------------------
-  for(n=0;n<frame->data_len;n++) {
-    frame->data[n]=LIN_FRAME.data[n]; 
+  
+  uint8_t *resp;
+  int resp_len = 0;
+  
+  while ((resp_len < frame -> data_len) && getc(LIN_UART, (char*)&resp[resp_len])) {
+    ++resp_len;
+    frame->data[n]=resp;
   }
-  // calculate checksum
-  checksum=p_LIN_makeChecksum(frame);
-
-  //-------------------------------
-  // check if crc ok
-  //-------------------------------
-  if(LIN_MASTER.crc!=checksum) {
-    // checksum incorrect
-    // small pause
-    // so that the next frame is not sent too fast
-    p_LIN_wait_us(LIN_INTER_FRAME_DELAY);
-    return(LIN_WRONG_CRC);
-  }
-      
-  //-------------------------------
-  // data is ok
-  //-------------------------------
-  // small pause
-  // so that the next frame is not sent too fast
-  p_LIN_wait_us(LIN_INTER_FRAME_DELAY);
-
-*/
 
   return(LIN_OK);
 }

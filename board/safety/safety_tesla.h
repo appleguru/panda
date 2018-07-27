@@ -1,4 +1,4 @@
-#include "../drivers/gmlanswitch.h"
+#include "../drivers/uja1023.h"
 
 static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   // 0x118 on bus 2 is DI_torque2. Example message on bus2, id 0x118: FF AF F4 21 91 6B
@@ -13,10 +13,10 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
     
     //if the car goes into reverse, set GMLAN to 1 (low.. inverted via circuit)...
     if (drive_state == 2) {
-      set_gmlan_digital_output(GMLAN_LOW);
+      set_uja1023_output(0x01);
       //puts("Got Reverse\n");
     } else {
-      set_gmlan_digital_output(GMLAN_HIGH);
+      set_uja1023_output(0x00);
       //puts("Got Drive\n");
     }
   }
@@ -26,7 +26,7 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
 
 static void tesla_init(int16_t param) {
   controls_allowed = 0;
-  gmlan_switch_init();
+  uja1023_init();
 }
 
 static int tesla_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {

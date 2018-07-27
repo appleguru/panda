@@ -10,9 +10,10 @@
 #include "drivers/llgpio.h"
 #include "gpio.h"
 
+#include "drivers/uart.h"
+
 #include "safety.h"
 #include "provision.h"
-#include "drivers/uart.h"
 #include "drivers/adc.h"
 #include "drivers/usb.h"
 #include "drivers/can.h"
@@ -146,6 +147,8 @@ void usb_cb_ep2_out(uint8_t *usbdata, int len, int hardwired) {
   else if (safety_tx_lin_hook(usbdata[0]-2, usbdata+1, len-1) && (ur == &lin1_ring || ur == &lin2_ring)) {
     puts("Got a LIN message over USB!\n");
     
+    /*
+    
     //make our frame; assume 1st byte is the ID, rest is data:
     LIN_FRAME_t frame_to_send;
     
@@ -168,6 +171,7 @@ void usb_cb_ep2_out(uint8_t *usbdata, int len, int hardwired) {
     puth(LIN_SendData(ur, &frame_to_send));
     puts("\n");
     */
+    
     
   }
 }
