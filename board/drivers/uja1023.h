@@ -3,7 +3,7 @@
 #ifdef PANDA
 int lin_send_timer = TICKS_PER_FRAME;
 
-LIN_FRAME_t assign_id_frame, io_cfg_1_frame, io_cfg_2_frame, io_cfg_3_frame, io_cfg_4_frame, px_req_frame, frame_to_send;
+LIN_FRAME_t assign_id_frame, io_cfg_1_frame, io_cfg_2_frame, io_cfg_3_frame, io_cfg_4_frame, px_req_frame, frame_to_send, frame_to_receive;
 
 
 int initial_loop_num = 0;
@@ -47,19 +47,18 @@ void TIM4_IRQHandler(void) {
     } //if counter = 0
     
     if (lin_send_timer == TICKS_PER_FRAME - 2000 && frame_to_send.has_response) {
-      //receive frameID response
-      LIN_FRAME_t frame_to_receive;
-      frame_to_receive.data_len = 8;
-      frame_to_receive.frame_id = 0x7D; //Response PID, 0x7D = 2 bit parity + 0x3C raw ID
-  
+      //send empty header to slave
+      LIN_SendReceiveFrame(&lin1_ring, &frame_to_receive);      
+    }
+
+    if (lin_send_timer == TICKS_PER_FRAME - 3000 && frame_to_send.has_response) {
       LIN_ReceiveData(&lin1_ring, &frame_to_receive);
       puts("Received Lin frame: ");
       for(int n=0; n < frame_to_receive.data_len; n++) {
         puth(frame_to_receive.data[n]);
       }
       puts("\n");
-      
-    } //receive every 1s, .5secs apart from the send
+    }
     
   lin_send_timer--;
   } //interrupt
@@ -67,6 +66,11 @@ void TIM4_IRQHandler(void) {
 }
 
 void uja1023_init(void) {  
+  //make receive frame
+  //LIN_FRAME_t frame_to_receive;
+  frame_to_receive.data_len = 8;
+  frame_to_receive.frame_id = 0x7D; //Response PID, 0x7D = 2 bit parity + 0x3C raw ID
+
   //make frame for Assign frame ID
   //LIN_FRAME_t assign_id_frame;
   assign_id_frame.has_response = 1;

@@ -97,11 +97,8 @@ LIN_ERR_t LIN_SendData(uart_ring *LIN_UART, LIN_FRAME_t *frame)
 // LIN_RX_EMPTY = no frame received
 // LIN_WRONG_CRC = Checksum wrong
 // --------------------------------------------------------------
-LIN_ERR_t LIN_ReceiveData(uart_ring *LIN_UART, LIN_FRAME_t *frame)
+LIN_ERR_t LIN_SendReceiveFrame(uart_ring *LIN_UART, LIN_FRAME_t *frame)
 {
-  uint32_t rx_timeout;
-  uint8_t checksum, n;
-
   // check the length
   if((frame -> data_len < 1) || (frame -> data_len > LIN_MAX_DATA)) {
     return(LIN_WRONG_LEN);
@@ -122,6 +119,13 @@ LIN_ERR_t LIN_ReceiveData(uart_ring *LIN_UART, LIN_FRAME_t *frame)
   //-------------------------------
   putc(LIN_UART, frame->frame_id);
 
+  //now wait for the slave device to respond with the data
+
+  return(LIN_OK);
+}
+
+LIN_ERR_t LIN_ReceiveData(uart_ring *LIN_UART, LIN_FRAME_t *frame)
+{
   //-------------------------------
   // copy received data
   //-------------------------------
@@ -133,9 +137,9 @@ LIN_ERR_t LIN_ReceiveData(uart_ring *LIN_UART, LIN_FRAME_t *frame)
   
   while ((resp_len < frame -> data_len) && getc(LIN_UART, (char*)&resp[resp_len])) {
     ++resp_len;
-    frame->data[resp_len]=resp[resp_len];
+    frame->data[resp_len]=resp;
   }
-
+  
   return(LIN_OK);
 }
 
