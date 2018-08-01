@@ -9,8 +9,8 @@ LIN_FRAME_t assign_id_frame, io_cfg_1_frame, io_cfg_2_frame, io_cfg_3_frame, io_
 int initial_loop_num = 0;
 
 
-void TIM4_IRQHandler(void) {
-  if (TIM4->SR & TIM_SR_UIF) {
+void TIM5_IRQHandler(void) {
+  if (TIM5->SR & TIM_SR_UIF) {
     if (lin_send_timer == 0) {
       //send every 1s
       lin_send_timer = TICKS_PER_FRAME;
@@ -62,7 +62,7 @@ void TIM4_IRQHandler(void) {
     
   lin_send_timer--;
   } //interrupt
-  TIM4->SR = 0;
+  TIM5->SR = 0;
 }
 
 void uja1023_init(void) {  
@@ -152,20 +152,40 @@ void uja1023_init(void) {
   px_req_frame.data[1]  = 0x80; //D1, PWM Value; shouldn't matter but is 0x80 per datasheet example
   
   // setup
-  TIM4->PSC = 48-1;          // tick on 1 us
-  TIM4->CR1 = TIM_CR1_CEN;   // enable
-  TIM4->ARR = 30-1;          // 33.3 kbps
+  TIM5->PSC = 48-1;          // tick on 1 us
+  TIM5->CR1 = TIM_CR1_CEN;   // enable
+  TIM5->ARR = 30-1;          // 33.3 kbps
 
   // in case it's disabled
-  NVIC_EnableIRQ(TIM4_IRQn);
+  NVIC_EnableIRQ(TIM5_IRQn);
 
   // run the interrupt
-  TIM4->DIER = TIM_DIER_UIE; // update interrupt
-  TIM4->SR = 0;
+  TIM5->DIER = TIM_DIER_UIE; // update interrupt
+  TIM5->SR = 0;
   
   initial_loop_num = 0;
   
 }
+
+/*
+Set UJA1023 output pins. Bits = pins
+P0 = bit 0
+P1 = bit 1
+...
+P7 = bit 7
+0b10101010 = P0 off, P1 on, P2 off, P3 on, P4 off, P5 on, P6 off, P7 on
+
+Examples:
+set bit 5:
+set_uja1023_output_bits(1 << 5); //turn on any pins that = 1, leave all other pins alone
+
+clear bit 5:
+clear_uja1023_output_bits(1 << 5); //turn off any pins that = 1, leave all other pins alone
+
+Or set the whole buffer at once:
+set_uja1023_output_buffer(0xFF); //turn all output pins on
+set_uja1023_output_buffer(0x00); //turn all output pins off
+*/
 
 //turn on any pins that = 1, leave all other pins alone
 void set_uja1023_output_bits(uint8_t to_set) {

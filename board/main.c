@@ -12,12 +12,13 @@
 
 #include "drivers/uart.h"
 #include "drivers/lin.h"
+#include "drivers/can.h"
 
 #include "safety.h"
 #include "provision.h"
 #include "drivers/adc.h"
 #include "drivers/usb.h"
-#include "drivers/can.h"
+
 #include "drivers/spi.h"
 #include "drivers/timer.h"
 
