@@ -5,22 +5,24 @@
 
 #include "libc.h"
 
+#include "provision.h"
+
 #include "drivers/drivers.h"
 
 #include "drivers/llgpio.h"
 #include "gpio.h"
 
 #include "drivers/uart.h"
-#include "drivers/lin.h"
-#include "drivers/can.h"
-
-#include "safety.h"
-#include "provision.h"
 #include "drivers/adc.h"
 #include "drivers/usb.h"
 
 #include "drivers/spi.h"
 #include "drivers/timer.h"
+
+#include "drivers/lin.h"
+#include "drivers/gmlan_alt.h"
+#include "safety.h"
+#include "drivers/can.h"
 
 
 // ***************************** fan *****************************

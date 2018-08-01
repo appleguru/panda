@@ -1,3 +1,5 @@
+#include "../drivers/uja1023.h"
+
 // board enforces
 //   in-state
 //      accel set/resume
@@ -98,7 +100,6 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
       //puts("Got Drive\n");
     }
   }
-}
   
 }
 

@@ -5,6 +5,8 @@
 #define BITBANG 0
 #define GPIO_SWITCH 1
 
+#define MAX_BITS_CAN_PACKET (200)
+
 int gmlan_alt_mode = BITBANG; 
 
 /// canbitbang.h ///
@@ -16,8 +18,6 @@ int gmlan_silent_count = 0;
 int gmlan_fail_count = 0;
 #define REQUIRED_SILENT_TIME 10
 #define MAX_FAIL_COUNT 10
-
-#define MAX_BITS_CAN_PACKET (200)
 
 // returns out_len
 int do_bitstuff(char *out, char *in, int in_len) {
@@ -131,6 +131,51 @@ int can_timeout_counter = GMLAN_TICKS_PER_SECOND; //1 second
 int inverted_bit_to_send = GMLAN_HIGH; 
 int gmlan_switch_enabled = -1;
 
+void gmlan_switch_init(void) {
+  gmlan_alt_mode = GPIO_SWITCH;
+  gmlan_switch_enabled = 1;
+  set_gpio_mode(GPIOB, 13, MODE_OUTPUT);
+  
+  // setup
+  TIM4->PSC = 48-1;          // tick on 1 us
+  TIM4->CR1 = TIM_CR1_CEN;   // enable
+  TIM4->ARR = 30-1;          // 33.3 kbps
+
+  // in case it's disabled
+  NVIC_EnableIRQ(TIM4_IRQn);
+
+  // run the interrupt
+  TIM4->DIER = TIM_DIER_UIE; // update interrupt
+  TIM4->SR = 0;
+  
+  inverted_bit_to_send = GMLAN_HIGH; //We got initialized, set the output high 
+}
+
+void set_gmlan_digital_output(int to_set) {
+  inverted_bit_to_send = to_set;
+  /*
+  puts("Writing ");
+  puth(inverted_bit_to_send);
+  puts("\n");
+  */
+}
+
+void enable_gmlan_switch(void) {
+  can_timeout_counter = GMLAN_TICKS_PER_SECOND;
+  gmlan_switch_enabled = 1; 
+  inverted_bit_to_send = GMLAN_HIGH;
+}
+
+/// canbitbang.h ///
+
+void set_bitbanged_gmlan(int val) {
+  if (val) {
+    GPIOB->ODR |= (1 << 13);
+  } else {
+    GPIOB->ODR &= ~(1 << 13);
+  }
+}
+
 void TIM4_IRQHandler(void) {
   if (gmlan_alt_mode == BITBANG) {
     if (TIM4->SR & TIM_SR_UIF && gmlan_sendmax != -1) {
@@ -206,52 +251,6 @@ void TIM4_IRQHandler(void) {
     }
     TIM4->SR = 0;
   } //gmlan switch mode
-}
-
-void gmlan_switch_init(void) {
-  gmlan_alt_mode = GPIO_SWITCH;
-  gmlan_switch_enabled = 1;
-  set_gpio_mode(GPIOB, 13, MODE_OUTPUT);
-  
-  // setup
-  TIM4->PSC = 48-1;          // tick on 1 us
-  TIM4->CR1 = TIM_CR1_CEN;   // enable
-  TIM4->ARR = 30-1;          // 33.3 kbps
-
-  // in case it's disabled
-  NVIC_EnableIRQ(TIM4_IRQn);
-
-  // run the interrupt
-  TIM4->DIER = TIM_DIER_UIE; // update interrupt
-  TIM4->SR = 0;
-  
-  inverted_bit_to_send = GMLAN_HIGH; //We got initialized, set the output high 
-}
-
-void set_gmlan_digital_output(int to_set) {
-  inverted_bit_to_send = to_set;
-  /*
-  puts("Writing ");
-  puth(inverted_bit_to_send);
-  puts("\n");
-  */
-}
-
-void enable_gmlan_switch(void) {
-  can_timeout_counter = GMLAN_TICKS_PER_SECOND;
-  gmlan_switch_enabled = 1; 
-  inverted_bit_to_send = GMLAN_HIGH;
-}
-#endif
-
-/// canbitbang.h ///
-
-void set_bitbanged_gmlan(int val) {
-  if (val) {
-    GPIOB->ODR |= (1 << 13);
-  } else {
-    GPIOB->ODR &= ~(1 << 13);
-  }
 }
 
 void bitbang_gmlan(CAN_FIFOMailBox_TypeDef *to_bang) {
