@@ -167,8 +167,19 @@ void uja1023_init(void) {
   
 }
 
-void set_uja1023_output(uint8_t to_set) {
-  px_req_frame.data[0]  = to_set;
+//turn on any pins that = 1, leave all other pins alone
+void set_uja1023_output_bits(uint8_t to_set) {
+  px_req_frame.data[0] |= to_set;
+}
+
+//turn off any pins that = 1, leave all other pins alone
+void clear_uja1023_output_bits(uint8_t to_clear) {
+  px_req_frame.data[0] &= ~to_clear;
+}
+
+//Set the whole Px output buffer at once:
+void set_uja1023_output_buffer(uint8_t to_set) {
+  px_req_frame.data[0] = to_set;
 }
 
 #endif
