@@ -2,22 +2,14 @@
 #define GMLAN_TICKS_PER_TIMEOUT_TICKLE 500 //15ms @ 33.3kbps
 #define GMLAN_HIGH 0 //0 is high on bus (dominant)
 #define GMLAN_LOW 1 //1 is low on bus
+
+#define DISABLED -1
 #define BITBANG 0
 #define GPIO_SWITCH 1
 
 #define MAX_BITS_CAN_PACKET (200)
 
-int gmlan_alt_mode = BITBANG; 
-
-/// canbitbang.h ///
-char pkt_stuffed[MAX_BITS_CAN_PACKET];
-int gmlan_sending = -1;
-int gmlan_sendmax = -1;
-
-int gmlan_silent_count = 0;
-int gmlan_fail_count = 0;
-#define REQUIRED_SILENT_TIME 10
-#define MAX_FAIL_COUNT 10
+int gmlan_alt_mode = DISABLED; 
 
 // returns out_len
 int do_bitstuff(char *out, char *in, int in_len) {
@@ -122,20 +114,9 @@ int get_bit_message(char *out, CAN_FIFOMailBox_TypeDef *to_bang) {
   return len;
 }
 
-/// end canbitbang.h ///
-
 #ifdef PANDA
-int gmlan_timeout_counter = GMLAN_TICKS_PER_TIMEOUT_TICKLE; //GMLAN transceiver times out every 17ms held high; tickle every 15ms
-int can_timeout_counter = GMLAN_TICKS_PER_SECOND; //1 second
 
-int inverted_bit_to_send = GMLAN_HIGH; 
-int gmlan_switch_enabled = -1;
-
-void gmlan_switch_init(void) {
-  gmlan_alt_mode = GPIO_SWITCH;
-  gmlan_switch_enabled = 1;
-  set_gpio_mode(GPIOB, 13, MODE_OUTPUT);
-  
+void setup_timer4() {
   // setup
   TIM4->PSC = 48-1;          // tick on 1 us
   TIM4->CR1 = TIM_CR1_CEN;   // enable
@@ -147,8 +128,24 @@ void gmlan_switch_init(void) {
   // run the interrupt
   TIM4->DIER = TIM_DIER_UIE; // update interrupt
   TIM4->SR = 0;
+}
+
+int gmlan_timeout_counter = GMLAN_TICKS_PER_TIMEOUT_TICKLE; //GMLAN transceiver times out every 17ms held high; tickle every 15ms
+int can_timeout_counter = GMLAN_TICKS_PER_SECOND; //1 second
+
+int inverted_bit_to_send = GMLAN_HIGH; 
+int gmlan_switch_below_timeout = -1;
+int gmlan_switch_timeout_enable = 0;
+
+void gmlan_switch_init(int timeout_enable) {
+  gmlan_switch_timeout_enable = timeout_enable;
+  gmlan_alt_mode = GPIO_SWITCH;
+  gmlan_switch_below_timeout = 1;
+  set_gpio_mode(GPIOB, 13, MODE_OUTPUT);
   
-  inverted_bit_to_send = GMLAN_HIGH; //We got initialized, set the output high 
+  setup_timer4();
+  
+  inverted_bit_to_send = GMLAN_LOW; //We got initialized, set the output low
 }
 
 void set_gmlan_digital_output(int to_set) {
@@ -160,13 +157,11 @@ void set_gmlan_digital_output(int to_set) {
   */
 }
 
-void enable_gmlan_switch(void) {
+void reset_gmlan_switch_timeout(void) {
   can_timeout_counter = GMLAN_TICKS_PER_SECOND;
-  gmlan_switch_enabled = 1; 
-  inverted_bit_to_send = GMLAN_HIGH;
+  gmlan_switch_below_timeout = 1;
+  gmlan_alt_mode = GPIO_SWITCH;
 }
-
-/// canbitbang.h ///
 
 void set_bitbanged_gmlan(int val) {
   if (val) {
@@ -175,6 +170,15 @@ void set_bitbanged_gmlan(int val) {
     GPIOB->ODR &= ~(1 << 13);
   }
 }
+
+char pkt_stuffed[MAX_BITS_CAN_PACKET];
+int gmlan_sending = -1;
+int gmlan_sendmax = -1;
+
+int gmlan_silent_count = 0;
+int gmlan_fail_count = 0;
+#define REQUIRED_SILENT_TIME 10
+#define MAX_FAIL_COUNT 10
 
 void TIM4_IRQHandler(void) {
   if (gmlan_alt_mode == BITBANG) {
@@ -226,15 +230,13 @@ void TIM4_IRQHandler(void) {
   } //bit bang mode
 
   else if (gmlan_alt_mode == GPIO_SWITCH) {
-    if (TIM4->SR & TIM_SR_UIF && gmlan_switch_enabled != -1) {
-      if (can_timeout_counter == 0) {
-        //it has been more than 1 second since receiving a CAN message in tesla safety. Assume we are in a different safety mode, disable timer and restore the GMLAN output
+    if (TIM4->SR & TIM_SR_UIF && gmlan_switch_below_timeout != -1) {
+      if (can_timeout_counter == 0 && gmlan_switch_timeout_enable) {
+        //it has been more than 1 second since timeout was reset; disable timer and restore the GMLAN output
         set_gpio_output(GPIOB, 13, GMLAN_LOW);
-        //set_gpio_mode(GPIOB, 13, MODE_INPUT);
-        //TIM4->DIER = 0;  // no update interrupt
-        //TIM4->CR1 = 0;   // disable timer
-        gmlan_switch_enabled = -1;
+        gmlan_switch_below_timeout = -1;
         gmlan_timeout_counter = GMLAN_TICKS_PER_TIMEOUT_TICKLE;
+        gmlan_alt_mode = DISABLED;
       }
       else {
         can_timeout_counter--;
@@ -268,19 +270,7 @@ void bitbang_gmlan(CAN_FIFOMailBox_TypeDef *to_bang) {
   set_bitbanged_gmlan(1); // recessive
   set_gpio_mode(GPIOB, 13, MODE_OUTPUT);
 
-  // setup
-  TIM4->PSC = 48-1;          // tick on 1 us
-  TIM4->CR1 = TIM_CR1_CEN;   // enable
-  TIM4->ARR = 30-1;          // 33.3 kbps
-
-  // in case it's disabled
-  NVIC_EnableIRQ(TIM4_IRQn);
-
-  // run the interrupt
-  TIM4->DIER = TIM_DIER_UIE; // update interrupt
-  TIM4->SR = 0;
+  setup_timer4();
 }
 
 #endif
-
-/// end canbitbang.h ///
