@@ -53,11 +53,11 @@ void TIM5_IRQHandler(void) {
 
     if (lin_send_timer == TICKS_PER_FRAME - 3000 && frame_to_send.has_response) {
       LIN_ReceiveData(&lin1_ring, &frame_to_receive);
-      puts("Received Lin frame: ");
+      /*puts("Received Lin frame: ");
       for(int n=0; n < frame_to_receive.data_len; n++) {
         puth(frame_to_receive.data[n]);
       }
-      puts("\n");
+      puts("\n");*/
     }
     
   lin_send_timer--;

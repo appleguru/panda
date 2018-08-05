@@ -4,7 +4,6 @@
 // ********************* includes *********************
 
 #include "libc.h"
-
 #include "provision.h"
 
 #include "drivers/drivers.h"
@@ -15,15 +14,12 @@
 #include "drivers/uart.h"
 #include "drivers/adc.h"
 #include "drivers/usb.h"
-
 #include "drivers/spi.h"
 #include "drivers/timer.h"
 
-#include "drivers/lin.h"
 #include "drivers/gmlan_alt.h"
 #include "safety.h"
 #include "drivers/can.h"
-
 
 // ***************************** fan *****************************
 
@@ -113,6 +109,7 @@ int get_health_pkt(void *dat) {
   if (safety_ignition < 0) {
     //Use the GPIO pin to determine ignition
     health->started = (GPIOA->IDR & (1 << 1)) == 0;
+    //health->started = 1; // Needed for Tesla only. Another way needs to be found
   } else {
     //Current safety hooks want to determine ignition (ex: GM)
     health->started = safety_ignition;
@@ -144,39 +141,8 @@ void usb_cb_ep2_out(uint8_t *usbdata, int len, int hardwired) {
   if (len == 0) return;
   uart_ring *ur = get_ring_by_number(usbdata[0]);
   if (!ur) return;
-  if (usbdata[0] < 2) {
+  if ((usbdata[0] < 2) || safety_tx_lin_hook(usbdata[0]-2, usbdata+1, len-1)) {
     for (int i = 1; i < len; i++) while (!putc(ur, usbdata[i]));
-  }
-  //if we're a LIN message
-  else if (safety_tx_lin_hook(usbdata[0]-2, usbdata+1, len-1) && (ur == &lin1_ring || ur == &lin2_ring)) {
-    puts("Got a LIN message over USB!\n");
-    
-    /*
-    
-    //make our frame; assume 1st byte is the ID, rest is data:
-    LIN_FRAME_t frame_to_send;
-    
-    frame_to_send.frame_id=usbdata[1];
-    frame_to_send.data_len=len-2;
-    for(int n = 0; n < len - 2; n++)
-    {
-      frame_to_send.data[n] = usbdata[n + 2];
-      //puts("Byte to send: ");
-      //puth(frame_to_send.data[n]);
-      //puts("\n");
-    }
-    
-    /*
-    puts("LIN Frame Length: ");
-    puth(frame_to_send.data_len);
-    puts("\n");
-    
-    puts("LIN_SendData return value: ");
-    puth(LIN_SendData(ur, &frame_to_send));
-    puts("\n");
-    */
-    
-    
   }
 }
 
@@ -322,12 +288,18 @@ int usb_cb_control_msg(USB_Setup_TypeDef *setup, uint8_t *resp, int hardwired) {
           case SAFETY_NOOUTPUT:
             can_silent = ALL_CAN_SILENT;
             break;
-          case SAFETY_TESLA:
-            can_silent = ALL_CAN_SILENT;
-            break;
           case SAFETY_ELM327:
             can_silent = ALL_CAN_BUT_MAIN_SILENT;
             can_autobaud_enabled[0] = false;
+            break;
+          case SAFETY_TESLA:
+            can_silent = ALL_CAN_LIVE;
+            can_autobaud_enabled[0] = false;
+            can_autobaud_enabled[1] = false;
+            #ifdef PANDA
+              can_autobaud_enabled[2] = false;
+            #endif
+            // MISSING: setup GMLAN pin as output and high level to switch EPAS CAN on Tesla Giraffe
             break;
           default:
             can_silent = ALL_CAN_LIVE;
@@ -369,10 +341,6 @@ int usb_cb_control_msg(USB_Setup_TypeDef *setup, uint8_t *resp, int hardwired) {
       while ((resp_len < min(setup->b.wLength.w, MAX_RESP_LEN)) &&
                          getc(ur, (char*)&resp[resp_len])) {
         ++resp_len;
-       /* if (ur == &lin1_ring || ur == &lin2_ring)
-        { 
-          puts("Got Lin Char: "); puth(resp[resp_len]); puts("\n");
-        } */
       }
       break;
     // **** 0xe1: uart set baud rate
