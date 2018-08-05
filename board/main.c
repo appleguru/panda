@@ -18,8 +18,10 @@
 #include "drivers/timer.h"
 
 #include "drivers/gmlan_alt.h"
+#include "drivers/lin.h"
 #include "safety.h"
 #include "drivers/can.h"
+
 
 // ***************************** fan *****************************
 
