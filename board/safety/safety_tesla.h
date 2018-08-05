@@ -3,7 +3,16 @@
 static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   //Set UJA1023 outputs for camera swicther/etc.
   
-  int addr = (to_push->RIR >> 21);
+  uint32_t addr;
+  if (to_push->RIR & 4) {
+    // Extended
+    // Not looked at, but have to be separated
+    // to avoid address collision
+    addr = to_push->RIR >> 3;
+  } else {
+    // Normal
+    addr = to_push->RIR >> 21;
+  }
   
   //0x118 is DI_torque2
   if (addr == 0x118) {
