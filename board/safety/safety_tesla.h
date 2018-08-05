@@ -1,15 +1,61 @@
 #include "../drivers/uja1023.h"
 
 static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
-  // 0x118 on bus 2 is DI_torque2. Example message on bus2, id 0x118: FF AF F4 21 91 6B
-  // 9F is park, AF is reverse, CF is drive, BF is neutral (with brake on)
-  // specifically, bits 20-22 are drive state: 001 (1) is park, 010 (2) is reverse, 011 (3) is Neutral, 100 (4) is drive
+  //Set UJA1023 outputs for camera swicther/etc.
   
-  // RIR is CAN identity register
-  if ((to_push->RIR >> 21) == 0x118) {
-    //RDHR is 32bit high register. RDLR is 32bit low register
-    //if whole CAN message is FF AF F4 21 91 6B, RDLR contains 21 F4 AF FF
-    int drive_state = (to_push->RDLR >> 12) & 0x7;
+  int addr = (to_push->RIR >> 21);
+  
+  //0x118 is DI_torque2
+  if (addr == 0x118) {
+    int drive_state = (to_push->RDLR >> 12) & 0x7; //DI_gear : 12|3@1+
+    int brake_pressed = (to_push->RDLR & 0x8000) >> 15;
+
+    //if the car goes into reverse, set UJA1023 output pin 0 to high. If Drive, set pin 1 high.
+    //DI_gear 7 "DI_GEAR_SNA" 4 "DI_GEAR_D" 3 "DI_GEAR_N" 2 "DI_GEAR_R" 1 "DI_GEAR_P" 0 "DI_GEAR_INVALID" ;
+    if (drive_state == 2) {
+      set_uja1023_output_bits(1 << 0);
+      //puts("Got Reverse\n");
+    } else {
+      clear_uja1023_output_bits(1 << 0);
+    }
+    if (drive_state == 3) {
+      set_uja1023_output_bits(1 << 1);
+      //puts("Got Drive\n");
+    } else {
+      clear_uja1023_output_bits(1 << 1);
+    }
+
+    //if the car's brake is pressed, set pin 2 to high
+    if (brake_pressed == 1) {
+      set_uja1023_output_bits(1 << 2);
+      //puts("Brake on!\n");
+    } else {
+      clear_uja1023_output_bits(1 << 2);
+    }
+  }
+
+  //0x45 is STW_ACTN_RQ
+  if (addr == 0x45) {
+    int turnSignalLever = (to_push->RDLR & 0x30000); //TurnIndLvr_Stat : 16|2@1+
+    
+    //TurnIndLvr_Stat 3 "SNA" 2 "RIGHT" 1 "LEFT" 0 "IDLE" ;
+    if (turnSignalLever == 1) {
+      //Left turn signal is on, turn on output pin 3
+      set_uja1023_output_bits(1 << 3);
+      //puts("Left turn on!\n");
+    }
+    else {
+      clear_uja1023_output_bits(1 << 3);
+    }
+    if (turnSignalLever == 2) {
+      //Right turn signal is on, turn on output pin 4
+      set_uja1023_output_bits(1 << 4);
+      //puts("Right turn on!\n");
+    }
+    else {
+      clear_uja1023_output_bits(1 << 4);
+    }
+  }
     
     /*
     Set UJA1023 output pins. Bits = pins
@@ -30,16 +76,6 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
     set_uja1023_output_buffer(0xFF); //turn all output pins on
     set_uja1023_output_buffer(0x00); //turn all output pins off
     */
-    
-    //if the car goes into reverse, set UJA1023 output pin 0 to high:
-    if (drive_state == 2) {
-      set_uja1023_output_bits(1 << 0);
-      //puts("Got Reverse\n");
-    } else {
-      clear_uja1023_output_bits(1 << 0);
-      //puts("Got Drive\n");
-    }
-  }
 }
 
 // *** no output safety mode ***
