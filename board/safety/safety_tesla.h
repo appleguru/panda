@@ -1,6 +1,11 @@
 #include "../drivers/uja1023.h"
 
+uint32_t tesla_ts_brakelight_on_last = 0;
+const int32_t BRAKELIGHT_CLEAR_INTERVAL = 250000; //25ms; needs to be slower than the framerate difference between the DI_torque2 (~100Hz) and DI_state messages (~10hz).
+
 static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
+  uint32_t ts = TIM2->CNT;
+  
   //Set UJA1023 outputs for camera swicther/etc.
   
   uint32_t addr;
@@ -23,13 +28,13 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
     //DI_gear 7 "DI_GEAR_SNA" 4 "DI_GEAR_D" 3 "DI_GEAR_N" 2 "DI_GEAR_R" 1 "DI_GEAR_P" 0 "DI_GEAR_INVALID" ;
     if (drive_state == 2) {
       set_uja1023_output_bits(1 << 0);
-      //puts("Got Reverse\n");
+      //puts(" Got Reverse\n");
     } else {
       clear_uja1023_output_bits(1 << 0);
     }
-    if (drive_state == 3) {
+    if (drive_state == 4) {
       set_uja1023_output_bits(1 << 1);
-      //puts("Got Drive\n");
+      //puts(" Got Drive\n");
     } else {
       clear_uja1023_output_bits(1 << 1);
     }
@@ -37,21 +42,43 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
     //if the car's brake is pressed, set pin 2 to high
     if (brake_pressed == 1) {
       set_uja1023_output_bits(1 << 2);
-      //puts("Brake on!\n");
+      puts(" Brake on!\n");
+      tesla_ts_brakelight_on_last = ts;
     } else {
-      clear_uja1023_output_bits(1 << 2);
+      uint32_t ts_elapsed = get_ts_elapsed(ts, tesla_ts_brakelight_on_last);
+      if (ts_elapsed > BRAKELIGHT_CLEAR_INTERVAL) {
+        clear_uja1023_output_bits(1 << 2);
+        puts(" Brakelight off!\n");
+      } 
+    }
+  }
+  
+  //BO_ 872 DI_state: 8 DI
+  if (addr == 0x368) {
+    int regen_brake_light = (to_push->RDLR >> 8) & 0x1; //DI_regenLight : 8|1@1+
+    //if the car's brake lights are on, set pin 2 to high
+    if (regen_brake_light == 1) {
+      set_uja1023_output_bits(1 << 2);
+      puts(" Regen Brake Light on!\n");
+      tesla_ts_brakelight_on_last = ts;
+    } else {
+      uint32_t ts_elapsed = get_ts_elapsed(ts, tesla_ts_brakelight_on_last);
+      if (ts_elapsed > BRAKELIGHT_CLEAR_INTERVAL) {
+        clear_uja1023_output_bits(1 << 2);
+        puts(" Brakelight off!\n");
+      }
     }
   }
 
   //0x45 is STW_ACTN_RQ
   if (addr == 0x45) {
-    int turnSignalLever = (to_push->RDLR & 0x30000); //TurnIndLvr_Stat : 16|2@1+
+    int turnSignalLever = (to_push->RDLR >> 16) & 0x3; //TurnIndLvr_Stat : 16|2@1+
     
     //TurnIndLvr_Stat 3 "SNA" 2 "RIGHT" 1 "LEFT" 0 "IDLE" ;
     if (turnSignalLever == 1) {
       //Left turn signal is on, turn on output pin 3
       set_uja1023_output_bits(1 << 3);
-      //puts("Left turn on!\n");
+      puts(" Left turn on!\n");
     }
     else {
       clear_uja1023_output_bits(1 << 3);
@@ -59,7 +86,7 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
     if (turnSignalLever == 2) {
       //Right turn signal is on, turn on output pin 4
       set_uja1023_output_bits(1 << 4);
-      //puts("Right turn on!\n");
+      puts(" Right turn on!\n");
     }
     else {
       clear_uja1023_output_bits(1 << 4);

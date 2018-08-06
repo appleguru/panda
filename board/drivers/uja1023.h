@@ -18,15 +18,19 @@ void TIM4_IRQHandler(void) {
         switch(initial_loop_num) {
         case 0 :
           frame_to_send = assign_id_frame;
+          puts("UJA1023 init stage 0\n");
           break;
         case 1 :
           frame_to_send = io_cfg_1_frame;
+          puts("UJA1023 init stage 1\n");
           break;
         case 2 :
           frame_to_send = io_cfg_2_frame;
+          puts("UJA1023 init stage 2\n");
           break;
         case 3 :
           frame_to_send = io_cfg_3_frame;
+          puts("UJA1023 init stage 3\n");
           break;
         }
         initial_loop_num++;
@@ -54,9 +58,12 @@ void TIM4_IRQHandler(void) {
     if (lin_send_timer == TICKS_PER_FRAME - 3000 && frame_to_send.has_response) {
       LIN_ReceiveData(&lin1_ring, &frame_to_receive);
       puts("Received Lin frame: ");
+      
+      /*
       for(int n=0; n < frame_to_receive.data_len; n++) {
         puth(frame_to_receive.data[n]);
       }
+      */
       puts("\n");
     }
     
@@ -65,7 +72,7 @@ void TIM4_IRQHandler(void) {
   TIM4->SR = 0;
 }
 
-void uja1023_init(void) {  
+void uja1023_init(void) {
   //make receive frame
   //LIN_FRAME_t frame_to_receive;
   frame_to_receive.data_len = 8;
