@@ -2,6 +2,14 @@
 
 uint32_t tesla_ts_brakelight_on_last = 0;
 const int32_t BRAKELIGHT_CLEAR_INTERVAL = 250000; //25ms; needs to be slower than the framerate difference between the DI_torque2 (~100Hz) and DI_state messages (~10hz).
+const int32_t STW_MENU_BTN_HOLD_INTERVAL = 2000000; //2s.. how long before we recognize the user is  holding this steering wheel button down
+
+uint32_t stw_menu_btn_pressed_ts = 0;
+int stw_menu_current_output_state = 0;
+int stw_menu_btn_state_last = 0;
+int stw_menu_output_flag = 0;
+
+
 
 static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   uint32_t ts = TIM2->CNT;
@@ -23,6 +31,7 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   if (addr == 0x118) {
     int drive_state = (to_push->RDLR >> 12) & 0x7; //DI_gear : 12|3@1+
     int brake_pressed = (to_push->RDLR & 0x8000) >> 15;
+    int tesla_speed_mph = ((((((to_push->RDLR >> 24) & 0x0F) << 8) + (( to_push->RDLR >> 16) & 0xFF)) * 0.05 -25));
 
     //if the car goes into reverse, set UJA1023 output pin 0 to high. If Drive, set pin 1 high.
     //DI_gear 7 "DI_GEAR_SNA" 4 "DI_GEAR_D" 3 "DI_GEAR_N" 2 "DI_GEAR_R" 1 "DI_GEAR_P" 0 "DI_GEAR_INVALID" ;
@@ -72,10 +81,11 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
 
   //0x45 is STW_ACTN_RQ
   if (addr == 0x45) {
-    int turnSignalLever = (to_push->RDLR >> 16) & 0x3; //TurnIndLvr_Stat : 16|2@1+
+    int turn_signal_lever = (to_push->RDLR >> 16) & 0x3; //TurnIndLvr_Stat : 16|2@1+
+    int stw_menu_button = (to_push->RDHR >> 5) & 0x1; //StW_Sw05_Psd : 37|1@1+
     
     //TurnIndLvr_Stat 3 "SNA" 2 "RIGHT" 1 "LEFT" 0 "IDLE" ;
-    if (turnSignalLever == 1) {
+    if (turn_signal_lever == 1) {
       //Left turn signal is on, turn on output pin 3
       set_uja1023_output_bits(1 << 3);
       //puts(" Left turn on!\n");
@@ -83,13 +93,43 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
     else {
       clear_uja1023_output_bits(1 << 3);
     }
-    if (turnSignalLever == 2) {
+    if (turn_signal_lever == 2) {
       //Right turn signal is on, turn on output pin 4
       set_uja1023_output_bits(1 << 4);
       //puts(" Right turn on!\n");
     }
     else {
       clear_uja1023_output_bits(1 << 4);
+    }
+    
+    if (stw_menu_button == 1) {
+      //menu button is pushed, if it wasn't last time, set the initial timestamp
+      if (stw_menu_btn_state_last == 0) {
+        stw_menu_btn_state_last = 1;
+        stw_menu_btn_pressed_ts = ts;  
+      }
+      else {
+        uint32_t stw_ts_elapsed = get_ts_elapsed(ts, stw_menu_btn_pressed_ts);
+        if (stw_ts_elapsed > STW_MENU_BTN_HOLD_INTERVAL) {
+          //user held the button for > 2s, do stuff!
+          if (stw_menu_current_output_state == 0 && stw_menu_output_flag == 0) {
+            stw_menu_output_flag = 1;
+            stw_menu_current_output_state = 1;
+            set_uja1023_output_bits(1 << 5);
+            puts("Menu Button held > 2s, setting output 5 HIGH\n");
+          }
+          else if (stw_menu_current_output_state == 1 && stw_menu_output_flag == 0) {
+            stw_menu_output_flag = 1;
+            stw_menu_current_output_state = 0;
+            clear_uja1023_output_bits(1 << 5);
+            puts("Menu Button held > 2s, setting output 5 LOW\n");
+          }
+        } //held > 2s
+      }
+    } //stw menu button pressed
+    else if (stw_menu_button == 0) {
+      stw_menu_output_flag = 0;
+      stw_menu_btn_state_last = 0;
     }
   }
     
