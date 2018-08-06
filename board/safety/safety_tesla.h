@@ -42,13 +42,13 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
     //if the car's brake is pressed, set pin 2 to high
     if (brake_pressed == 1) {
       set_uja1023_output_bits(1 << 2);
-      puts(" Brake on!\n");
+      //puts(" Brake on!\n");
       tesla_ts_brakelight_on_last = ts;
     } else {
       uint32_t ts_elapsed = get_ts_elapsed(ts, tesla_ts_brakelight_on_last);
       if (ts_elapsed > BRAKELIGHT_CLEAR_INTERVAL) {
         clear_uja1023_output_bits(1 << 2);
-        puts(" Brakelight off!\n");
+        //puts(" Brakelight off!\n");
       } 
     }
   }
@@ -59,13 +59,13 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
     //if the car's brake lights are on, set pin 2 to high
     if (regen_brake_light == 1) {
       set_uja1023_output_bits(1 << 2);
-      puts(" Regen Brake Light on!\n");
+      //puts(" Regen Brake Light on!\n");
       tesla_ts_brakelight_on_last = ts;
     } else {
       uint32_t ts_elapsed = get_ts_elapsed(ts, tesla_ts_brakelight_on_last);
       if (ts_elapsed > BRAKELIGHT_CLEAR_INTERVAL) {
         clear_uja1023_output_bits(1 << 2);
-        puts(" Brakelight off!\n");
+        //puts(" Brakelight off!\n");
       }
     }
   }
@@ -78,7 +78,7 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
     if (turnSignalLever == 1) {
       //Left turn signal is on, turn on output pin 3
       set_uja1023_output_bits(1 << 3);
-      puts(" Left turn on!\n");
+      //puts(" Left turn on!\n");
     }
     else {
       clear_uja1023_output_bits(1 << 3);
@@ -86,7 +86,7 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
     if (turnSignalLever == 2) {
       //Right turn signal is on, turn on output pin 4
       set_uja1023_output_bits(1 << 4);
-      puts(" Right turn on!\n");
+      //puts(" Right turn on!\n");
     }
     else {
       clear_uja1023_output_bits(1 << 4);

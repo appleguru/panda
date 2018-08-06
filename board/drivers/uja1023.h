@@ -1,4 +1,4 @@
-#define TICKS_PER_FRAME 66000 //1s = 33000
+#define TICKS_PER_FRAME 2000 //1s = 33000
 
 #ifdef PANDA
 int lin_send_timer = TICKS_PER_FRAME;
@@ -9,8 +9,8 @@ LIN_FRAME_t assign_id_frame, io_cfg_1_frame, io_cfg_2_frame, io_cfg_3_frame, io_
 int initial_loop_num = 0;
 
 
-void TIM4_IRQHandler(void) {
-  if (TIM4->SR & TIM_SR_UIF) {
+void TIM5_IRQHandler(void) {
+  if (TIM5->SR & TIM_SR_UIF) {
     if (lin_send_timer == 0) {
       //send every 1s
       lin_send_timer = TICKS_PER_FRAME;
@@ -47,16 +47,23 @@ void TIM4_IRQHandler(void) {
         */
         frame_to_send = px_req_frame;
       }
-      LIN_SendData(&lin1_ring, &frame_to_send);
+      LIN_SendData(&lin2_ring, &frame_to_send);
+      /*
+      puts("Set UJA to output: ");
+      puth(px_req_frame.data[0]);
+      puts("\n");
+      */
+      
+    
     } //if counter = 0
     
-    if (lin_send_timer == TICKS_PER_FRAME - 2000 && frame_to_send.has_response) {
+    if (lin_send_timer == (TICKS_PER_FRAME / 10)  && frame_to_send.has_response) {
       //send empty header to slave
-      LIN_SendReceiveFrame(&lin1_ring, &frame_to_receive);      
+      LIN_SendReceiveFrame(&lin2_ring, &frame_to_receive);      
     }
 
-    if (lin_send_timer == TICKS_PER_FRAME - 3000 && frame_to_send.has_response) {
-      LIN_ReceiveData(&lin1_ring, &frame_to_receive);
+    if (lin_send_timer == ((TICKS_PER_FRAME / 10) * 2) && frame_to_send.has_response) {
+      LIN_ReceiveData(&lin2_ring, &frame_to_receive);
       puts("Received Lin frame: ");
       
       /*
@@ -69,7 +76,7 @@ void TIM4_IRQHandler(void) {
     
   lin_send_timer--;
   } //interrupt
-  TIM4->SR = 0;
+  TIM5->SR = 0;
 }
 
 void uja1023_init(void) {
@@ -155,20 +162,20 @@ void uja1023_init(void) {
   px_req_frame.has_response = 0;
   px_req_frame.data_len = 2;
   px_req_frame.frame_id = 0xC4; //PID, 0xC4 = 2 bit parity + 0x04 raw ID
-  px_req_frame.data[0]  = 0x02; //D0, bit 7 = P7, bit 6 = P6 ... bit 0 = P0. 0x02 would set P1 to on
+  px_req_frame.data[0]  = 0x00; //D0, bit 7 = P7, bit 6 = P6 ... bit 0 = P0. 0x02 would set P1 to on
   px_req_frame.data[1]  = 0x80; //D1, PWM Value; shouldn't matter but is 0x80 per datasheet example
   
   // setup
-  TIM4->PSC = 48-1;          // tick on 1 us
-  TIM4->CR1 = TIM_CR1_CEN;   // enable
-  TIM4->ARR = 30-1;          // 33.3 kbps
+  TIM5->PSC = 48-1;          // tick on 1 us
+  TIM5->CR1 = TIM_CR1_CEN;   // enable
+  TIM5->ARR = 30-1;          // 33.3 kbps
 
   // in case it's disabled
-  NVIC_EnableIRQ(TIM4_IRQn);
+  NVIC_EnableIRQ(TIM5_IRQn);
 
   // run the interrupt
-  TIM4->DIER = TIM_DIER_UIE; // update interrupt
-  TIM4->SR = 0;
+  TIM5->DIER = TIM_DIER_UIE; // update interrupt
+  TIM5->SR = 0;
   
   initial_loop_num = 0;
   
