@@ -8,6 +8,7 @@ uint32_t stw_menu_btn_pressed_ts = 0;
 int stw_menu_current_output_state = 0;
 int stw_menu_btn_state_last = 0;
 int stw_menu_output_flag = 0;
+int high_beam_lever_state = 0;
 
 
 
@@ -83,6 +84,7 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   if (addr == 0x45) {
     int turn_signal_lever = (to_push->RDLR >> 16) & 0x3; //TurnIndLvr_Stat : 16|2@1+
     int stw_menu_button = (to_push->RDHR >> 5) & 0x1; //StW_Sw05_Psd : 37|1@1+
+    high_beam_lever_state = (to_push->RDLR >> 18) & 0x3; //SG_ HiBmLvr_Stat : 18|2@1+ 
     
     //TurnIndLvr_Stat 3 "SNA" 2 "RIGHT" 1 "LEFT" 0 "IDLE" ;
     if (turn_signal_lever == 1) {
@@ -132,6 +134,30 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
       stw_menu_btn_state_last = 0;
     }
   }
+  
+  //BO_ 1001 DAS_bodyControls: 8 XXX
+  if (addr == 0x3e9) {
+    int high_beam_decision = (to_push->RDLR >> 10) & 0x3; //DAS_highLowBeamDecision : 10|2@1+
+    // highLowBeamDecision:
+    //0: Undecided (Car off)
+    //1: Off
+    //2: On
+    //3: Auto High Beam is disabled
+    //VAL_ 69 HiBmLvr_Stat 3 "SNA" 2 "HIBM_FLSH_ON_PSD" 1 "HIBM_ON_PSD" 0 "IDLE" ;
+
+    //If the lever is in either high beam position and auto high beam is off or indicates highs should be on
+    if ((high_beam_decision == 3 && (high_beam_lever_state == 2 || high_beam_lever_state == 1))
+    || (high_beam_decision == 2 && (high_beam_lever_state == 2 || high_beam_lever_state == 1))) {
+      //high beams are on. Set the output 6 high
+      set_uja1023_output_bits(1 << 6);
+      //puts("High Beam on!\n");
+    } //high beams on!
+    else {
+      //high beams are off. Set the output 6 low
+      clear_uja1023_output_bits(1 << 6);
+      //puts("High Beam off!\n");
+    } //high beams off
+  } //DAS_bodyControls
     
     /*
     Set UJA1023 output pins. Bits = pins
