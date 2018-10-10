@@ -9,6 +9,7 @@ int stw_menu_current_output_state = 0;
 int stw_menu_btn_state_last = 0;
 int stw_menu_output_flag = 0;
 int high_beam_lever_state = 0;
+//int reverse_state = 0;
 
 
 
@@ -34,14 +35,38 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
     int brake_pressed = (to_push->RDLR & 0x8000) >> 15;
     int tesla_speed_mph = ((((((to_push->RDLR >> 24) & 0x0F) << 8) + (( to_push->RDLR >> 16) & 0xFF)) * 0.05 -25));
 
-    //if the car goes into reverse, set UJA1023 output pin 0 to high. If Drive, set pin 1 high.
+    //if the car goes into reverse, set UJA1023 output pin 5 to high. If Drive, set pin 1 high.
     //DI_gear 7 "DI_GEAR_SNA" 4 "DI_GEAR_D" 3 "DI_GEAR_N" 2 "DI_GEAR_R" 1 "DI_GEAR_P" 0 "DI_GEAR_INVALID" ;
+    
+    //UJA1023 pin0 is our output to the camera switcher
+    
     if (drive_state == 2) {
-      set_uja1023_output_bits(1 << 0);
+      //reverse_state = 1;
+      set_uja1023_output_bits(1 << 5);
+      
+      //use menu button long press as a toggle to invert output
+      //if we're in reverse and button state is 0, set output high
+      if (stw_menu_current_output_state = 1) {
+        clear_uja1023_output_bits(1 << 0);
+      }
+      else {
+        set_uja1023_output_bits(1 << 0);
+      }
       //puts(" Got Reverse\n");
+      
     } else {
-      clear_uja1023_output_bits(1 << 0);
+      //reverse_state = 0;
+      clear_uja1023_output_bits(1 << 5);
+      
+      //if we're in not in reverse and button state is 0, set output low (show front camera) if speed is less or equal to 5mph
+      if (stw_menu_current_output_state = 0 && tesla_speed_mph <= 5) {
+        clear_uja1023_output_bits(1 << 0);
+      }
+      else {
+        set_uja1023_output_bits(1 << 0);
+      } 
     }
+    
     if (drive_state == 4) {
       set_uja1023_output_bits(1 << 1);
       //puts(" Got Drive\n");
@@ -117,14 +142,14 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
           if (stw_menu_current_output_state == 0 && stw_menu_output_flag == 0) {
             stw_menu_output_flag = 1;
             stw_menu_current_output_state = 1;
-            set_uja1023_output_bits(1 << 5);
-            puts("Menu Button held, setting output 5 HIGH\n");
+            //set_uja1023_output_bits(1 << 5);
+            //puts("Menu Button held, setting output 5 HIGH\n");
           }
           else if (stw_menu_current_output_state == 1 && stw_menu_output_flag == 0) {
             stw_menu_output_flag = 1;
             stw_menu_current_output_state = 0;
-            clear_uja1023_output_bits(1 << 5);
-            puts("Menu Button held, setting output 5 LOW\n");
+            //clear_uja1023_output_bits(1 << 5);
+            //puts("Menu Button held, setting output 5 LOW\n");
           }
         } //held
       }
