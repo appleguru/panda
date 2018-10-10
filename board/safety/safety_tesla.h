@@ -52,8 +52,8 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
       //reverse_state = 0;
       clear_uja1023_output_bits(1 << 5);
       
-      //if we're in not in reverse and button state is 0, set output low (show front camera) if speed is less or equal to 5mph
-      if (stw_menu_current_output_state = 0 && tesla_speed_mph <= 5) {
+      //if we're in not in reverse and button state is 0, set output low (show front camera)
+      if (stw_menu_current_output_state = 0) {
         clear_uja1023_output_bits(1 << 0); //show front camera
       }
       
