@@ -14,7 +14,7 @@ void TIM5_IRQHandler(void) {
     if (lin_send_timer == 0) {
       //send every 1s
       lin_send_timer = TICKS_PER_FRAME;
-      if (initial_loop_num < 3) {
+      if (initial_loop_num <= 3) {
         switch(initial_loop_num) {
         case 0 :
           frame_to_send = assign_id_frame;
