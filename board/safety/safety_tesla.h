@@ -44,14 +44,8 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
       //reverse_state = 1;
       set_uja1023_output_bits(1 << 5);
       
-      //use menu button long press as a toggle to invert output
-      //if we're in reverse and button state is 0, set output high
-      if (stw_menu_current_output_state = 1) {
-        clear_uja1023_output_bits(1 << 0);
-      }
-      else {
-        set_uja1023_output_bits(1 << 0);
-      }
+      //if we're in reverse, we always want the rear camera up:
+      set_uja1023_output_bits(1 << 0); //show rear camera
       //puts(" Got Reverse\n");
       
     } else {
@@ -60,10 +54,12 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
       
       //if we're in not in reverse and button state is 0, set output low (show front camera) if speed is less or equal to 5mph
       if (stw_menu_current_output_state = 0 && tesla_speed_mph <= 5) {
-        clear_uja1023_output_bits(1 << 0);
+        clear_uja1023_output_bits(1 << 0); //show front camera
       }
+      
+      //if we're not in reverse and button state is 1, set the output high (show the rear camera)
       else {
-        set_uja1023_output_bits(1 << 0);
+        set_uja1023_output_bits(1 << 0); //show rear camera
       } 
     }
     
