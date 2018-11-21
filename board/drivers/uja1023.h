@@ -1,3 +1,27 @@
+/*
+This driver configures the NXP UJA1023 chip on revB tesla giraffe
+for output on startup and then allows the user to set the output
+pins via set_uja1023_output_bits() and set_uja1023_output_buffer()
+
+Set UJA1023 output pins. Bits = pins
+P0 = bit 0
+P1 = bit 1
+...
+P7 = bit 7
+0b10101010 = P0 off, P1 on, P2 off, P3 on, P4 off, P5 on, P6 off, P7 on
+
+Examples:
+set bit 5:
+set_uja1023_output_bits(1 << 5); //turn on any pins that = 1, leave all other pins alone
+
+clear bit 5:
+clear_uja1023_output_bits(1 << 5); //turn off any pins that = 1, leave all other pins alone
+
+Or set the whole buffer at once:
+set_uja1023_output_buffer(0xFF); //turn all output pins on
+set_uja1023_output_buffer(0x00); //turn all output pins off
+*/
+
 #define TICKS_PER_FRAME 2000 //1s = 33000
 
 #ifdef PANDA
