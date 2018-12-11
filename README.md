@@ -4,28 +4,21 @@
 
 # Table of Contents:
 
-[Table of Contents: 1](#_Toc532243485)
+[Useful Part Numbers](#useful-part-numbers)
 
-[Useful Part Numbers: 2](#_Toc532243486)
+[J8 RJ45 GPIO Pinout](#j8-rj45-gpio-pinout)
 
-[J8 RJ45 GPIO Pinout: 2](#_Toc532243487)
+[J7 RJ45 Comma Pinout](#j7-rj45-comma-pinout)
 
-[J7 RJ45 Comma Pinout: 2](#_Toc532243488)
+[General Purpose Outputs](#general-purpose-outputs)
 
-[General Purpose Outputs: 2](#_Toc532243489)
+[Default Output Mapping with tesla_revB_giraffe firmware](#default-output-mapping-with-tesla_revb_giraffe-firmware)
 
-[Default Output Mapping with tesla_revB_giraffe firmware: 3](#_Toc532243490)
+[Giraffe Can Bus Inputs/Outputs](#giraffe-can-bus-inputsoutputs)
 
-[Giraffe Can Bus Inputs/Outputs: 3](#_Toc532243491)
+[Firmware](#firmware)
 
-[Firmware: 3](#_Toc532243492)
-
-[Warranty, Disclaimer, Assumption of Risk, and Indemnification: 4](#_Toc532243493)
-
-
-
-
- 
+[Warranty, Disclaimer, Assumption of Risk, and Indemnification](#warranty-disclaimer-assumption-of-risk-and-indemnification)
 
 # Useful Part Numbers:
 
@@ -106,7 +99,7 @@ Standard Panda firmware (For the camera switcher, etc) can be found here: <https
 
 Openpilot-compatible firmware can be found here:
 
-https://github.com/jeankalud/openpilot/tree/revB_giraffe>
+https://github.com/jeankalud/openpilot/tree/revB_giraffe
 
 To flash new firmware, run *make recover* in the board directory with your panda connected to your PC via USB (please disconnect from the car to ensure a clean flash)
 
