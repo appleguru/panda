@@ -57,9 +57,9 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
         clear_uja1023_output_bits(1 << 0); //show front camera
       }
       
-      //if we're not in reverse and button state is 1, set the output high (show the rear camera)
+      //if we're not in reverse and button state is 1 or 2, set the output high (show the rear camera or HDMI)
       else {
-        set_uja1023_output_bits(1 << 0); //show rear camera
+        set_uja1023_output_bits(1 << 0); //show rear camera or HDMI
       } 
     }
     
@@ -215,7 +215,25 @@ static int tesla_tx_lin_hook(int lin_num, uint8_t *data, int len) {
 }
 
 static int tesla_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
-  return -1;
+
+  int32_t addr = to_fwd->RIR >> 21;
+
+  if (bus_num == 0) {
+    // intercept and squash some of the menu button commands
+    if (addr == 0x45) {
+      if (stw_menu_current_output_state >= 1) {
+        //if we're on reverse (1) forward steering wheel messages to the HDMI switcher
+        // This means HDMI switcher will switch inputs when going from rear cam to HDMI, and also from HDMI to front cam
+        return 1;
+        }
+      else {
+        //if the current output state is the forward camera (0), don't forward steering wheel button messages to the HDMI switcher
+        return -1;
+      }
+    } //STW ACT REQ
+    return 1; // Output all non-matched messages to HDMI switcher over bus 1 to look more like its connected to the actual car
+  } //if message is from bus0
+  return -1; //only forward messages from bus 0
 }
 
 const safety_hooks tesla_hooks = {
