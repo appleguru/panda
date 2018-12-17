@@ -5,7 +5,7 @@ const int32_t BRAKELIGHT_CLEAR_INTERVAL = 250000; //25ms; needs to be slower tha
 const int32_t STW_MENU_BTN_HOLD_INTERVAL = 750000; //75ms, how long before we recognize the user is  holding this steering wheel button down
 
 uint32_t stw_menu_btn_pressed_ts = 0;
-int stw_menu_current_output_state = 0;
+int stw_menu_current_output_state = 0; // 0 = front camera, 1 = rear camera, 2 = HDMI
 int stw_menu_btn_state_last = 0;
 int stw_menu_output_flag = 0;
 int high_beam_lever_state = 0;
@@ -135,18 +135,16 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
         uint32_t stw_ts_elapsed = get_ts_elapsed(ts, stw_menu_btn_pressed_ts);
         if (stw_ts_elapsed > STW_MENU_BTN_HOLD_INTERVAL) {
           //user held the button, do stuff!
-          if (stw_menu_current_output_state == 0 && stw_menu_output_flag == 0) {
+          if (stw_menu_output_flag == 0) {
             stw_menu_output_flag = 1;
-            stw_menu_current_output_state = 1;
-            //set_uja1023_output_bits(1 << 5);
-            //puts("Menu Button held, setting output 5 HIGH\n");
-          }
-          else if (stw_menu_current_output_state == 1 && stw_menu_output_flag == 0) {
-            stw_menu_output_flag = 1;
-            stw_menu_current_output_state = 0;
-            //clear_uja1023_output_bits(1 << 5);
-            //puts("Menu Button held, setting output 5 LOW\n");
-          }
+            if (stw_menu_current_output_state < 2) {
+              stw_menu_current_output_state++;
+            }
+            else {
+              //go back to state 0 if we're >=2
+              stw_menu_current_output_state = 0;
+            }
+          }//only change state once per press! 
         } //held
       }
     } //stw menu button pressed
