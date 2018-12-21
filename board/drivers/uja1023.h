@@ -30,7 +30,8 @@ int lin_send_timer = TICKS_PER_FRAME;
 LIN_FRAME_t assign_id_frame, io_cfg_1_frame, io_cfg_2_frame, io_cfg_3_frame, io_cfg_4_frame, px_req_frame, frame_to_send, frame_to_receive;
 
 
-int initial_loop_num = 0;
+int frame_num = 0;
+int button_num = 0;
 
 
 void TIM5_IRQHandler(void) {
@@ -38,8 +39,8 @@ void TIM5_IRQHandler(void) {
     if (lin_send_timer == 0) {
       //send every 1s
       lin_send_timer = TICKS_PER_FRAME;
-      if (initial_loop_num <= 3) {
-        switch(initial_loop_num) {
+      if (frame_num <= 3) {
+        switch(frame_num) {
         case 0 :
           frame_to_send = assign_id_frame;
           puts("UJA1023 init stage 0\n");
@@ -57,7 +58,7 @@ void TIM5_IRQHandler(void) {
           puts("UJA1023 init stage 3\n");
           break;
         }
-        initial_loop_num++;
+        frame_num++;
       }
       else {
         
@@ -69,7 +70,23 @@ void TIM5_IRQHandler(void) {
           px_req_frame.data[0] = 0x02;
         }
         */
+        
+        if (frame_num % 80 == 0) {
+          set_uja1023_output_bits(1 << button_num);
+        }
+        
+        if (frame_num % 80 == 1) {
+          clear_uja1023_output_bits(1 << button_num);
+          if (button_num == 3) {
+            button_num = 0;
+          }
+          else {
+            button_num++;
+          }
+        }
+        
         frame_to_send = px_req_frame;
+        frame_num++;
       }
       LIN_SendData(&lin2_ring, &frame_to_send);
       /*
@@ -201,7 +218,7 @@ void uja1023_init(void) {
   TIM5->DIER = TIM_DIER_UIE; // update interrupt
   TIM5->SR = 0;
   
-  initial_loop_num = 0;
+  frame_num = 0;
   
 }
 
