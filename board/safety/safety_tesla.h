@@ -15,9 +15,9 @@ int high_beam_lever_state = 0;
 /*
 Camera switch state table:
 OUT1 OUT2
-1     1 = Show rear cam
-0     1 = Show front cam
-any   0 = Show baby cam
+1   any = Show rear cam
+0     0 = Show front cam
+0     1 = Show baby cam
 */
 
 static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
@@ -51,9 +51,9 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
       //reverse_state = 1;
       set_uja1023_output_bits(1 << 5);
       
-      //if we're in reverse, we always want the rear camera up:
-      set_uja1023_output_bits(1 << 0); //SW1 to show rear cam
-      set_uja1023_output_bits(1 << 1); //SW2 to show feed from SW1
+      // if we're in reverse, we always want the rear camera up:
+      set_uja1023_output_bits(1 << 0); //SW1 to show rear cam (1)
+      // leave SW2 alone
       //puts(" Got Reverse\n");
       
     } else {
@@ -63,16 +63,16 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
       //if we're in not in reverse, use the button state to determine which camera to show
       // 0 = front camera, 1 = rear camera, 2 = baby cam
       if (stw_menu_current_output_state == 0) {
-        clear_uja1023_output_bits(1 << 0); //SW1 to show front cam
-        set_uja1023_output_bits(1 << 1); //SW2 to show feed from SW1
+        clear_uja1023_output_bits(1 << 0); //SW1 to show feed from SW2 (0)
+        clear_uja1023_output_bits(1 << 1); //SW2 to show front cam (0)
       }
       else if (stw_menu_current_output_state == 1) {
-        set_uja1023_output_bits(1 << 0); //SW1 to show rear cam
-        set_uja1023_output_bits(1 << 1); //SW2 to show feed from SW1
+        set_uja1023_output_bits(1 << 0); //SW1 to show rear cam (1)
+        set_uja1023_output_bits(1 << 1); //SW2 to show baby cam (1) (doesn't matter, but prep for next state to minimize switching time)
       }
       else if (stw_menu_current_output_state == 2) {
-        clear_uja1023_output_bits(1 << 0); //SW1 to front (doesn't matter, but prep for next state to minimize switching time)
-        clear_uja1023_output_bits(1 << 1); //SW2 to show baby cam
+        clear_uja1023_output_bits(1 << 0); //SW1 to show feed from SW2 (0)
+        set_uja1023_output_bits(1 << 1); //SW2 to show baby cam (1)
       }
     }
     
