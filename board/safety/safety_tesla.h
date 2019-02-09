@@ -1,15 +1,19 @@
 #include "../drivers/uja1023.h"
 
-const int32_t STW_MENU_BTN_HOLD_INTERVAL = 750000; //75ms, how long before we recognize the user is  holding this steering wheel button down
-const int32_t HDMI_SWITCH_BUTTON_HOLD_DURATION = 500000; //50ms, how long to press the button on the hdmi switcher for when the input changes
+const int32_t STW_MENU_BTN_HOLD_INTERVAL = 750000; //750ms, how long before we recognize the user is  holding this steering wheel button down
+const int32_t HDMI_SWITCH_BUTTON_HOLD_DURATION = 500000; //500ms, how long to press the button on the hdmi switcher for when the input changes
+const int32_t HDMI_FAKE_MENU_BUTTON_HOLD_DURATION = 800000; //800ms, how long to send a menu button press to the the hdmi interface to switch between HDMI and SERDES
 
 uint32_t stw_menu_btn_pressed_ts = 0;
 uint32_t hdmi_btn_pressed_ts = 0;
+uint32_t hdmi_fake_menu_btn_pressed_ts = 0;
+
 int stw_menu_current_output_state = 0; // 0 = rear camera, 1 = HDMI1, 2 = HDMI2, 3 = HDMI3, 4 = HDMI4 
 int stw_menu_btn_state_last = 0;
 int stw_menu_output_flag = 0;
 int hdmi_input_num = 0;
-int hdmi_input_change_in_progress = 0;
+int hdmi_switcher_input_change_in_progress = 0;
+int hdmi_interface_input_change_in_progress = 0;
 
 static int add_tesla_crc(uint32_t MLB, uint32_t MHB , int msg_len) {
   //"""Calculate CRC8 using 1D poly, FF start, FF end"""
@@ -67,8 +71,8 @@ static void do_send_menu_btn_to_hdmi(CAN_FIFOMailBox_TypeDef *to_push) {
 static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   uint32_t ts = TIM2->CNT;
   
-  if (hdmi_input_change_in_progress == 1 && ts > (hdmi_btn_pressed_ts + HDMI_SWITCH_BUTTON_HOLD_DURATION)) {
-    hdmi_input_change_in_progress = 0;
+  if (hdmi_switcher_input_change_in_progress == 1 && ts > (hdmi_btn_pressed_ts + HDMI_SWITCH_BUTTON_HOLD_DURATION)) {
+    hdmi_switcher_input_change_in_progress = 0;
     clear_uja1023_output_bits(1 << hdmi_input_num);
   }
   
@@ -117,7 +121,7 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
               // change input on HDMI switcher
               set_uja1023_output_bits(1 << hdmi_input_num);
               hdmi_btn_pressed_ts = TIM2->CNT;
-              hdmi_input_change_in_progress = 1;
+              hdmi_switcher_input_change_in_progress = 1;
             }
             else {
               //go back to state 0 if we're >=4
