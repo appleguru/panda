@@ -64,10 +64,10 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
     }
     
     if (drive_state == 4) {
-      set_uja1023_output_bits(1 << 1);
+      set_uja1023_output_bits(1 << 7);
       //puts(" Got Drive\n");
     } else {
-      clear_uja1023_output_bits(1 << 1);
+      clear_uja1023_output_bits(1 << 7);
     }
 
     //if the car's brake is pressed, set pin 2 to high
