@@ -72,16 +72,16 @@ The initial application for the GPIO is to support the "Tesla Camera switcher" p
 
 # Default Output Mapping with tesla_revB_giraffe firmware:
 
-| Output PIN Number | Function                                                     |
-| ----------------- | ------------------------------------------------------------ |
-| OUT1              | Front Camera Switch (High when car is in Reverse or menu   button override is active) |
-| OUT2              | Drive                                                        |
-| OUT3              | Brake Lights                                                 |
-| OUT4              | Left Turn Signal                                             |
-| OUT5              | Right Turn Signal                                            |
-| OUT6              | Reverse                                                      |
-| OUT7              | High Beams On                                                |
-| OUT8              | Un-mapped (Spare)                                            |
+| Output PIN Number | Function                      |
+| ----------------- | ----------------------------- |
+| OUT1              | SW1 (Front, Rear cams)        |
+| OUT2              | SW2 (Feed from SW1, Baby cam) |
+| OUT3              | Brake Lights                  |
+| OUT4              | Left Turn Signal              |
+| OUT5              | Right Turn Signal             |
+| OUT6              | Reverse                       |
+| OUT7              | High Beams On                 |
+| OUT8              | Drive                         |
 
  
 

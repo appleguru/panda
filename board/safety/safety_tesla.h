@@ -5,13 +5,20 @@ const int32_t BRAKELIGHT_CLEAR_INTERVAL = 250000; //25ms; needs to be slower tha
 const int32_t STW_MENU_BTN_HOLD_INTERVAL = 750000; //75ms, how long before we recognize the user is  holding this steering wheel button down
 
 uint32_t stw_menu_btn_pressed_ts = 0;
-int stw_menu_current_output_state = 0;
+int stw_menu_current_output_state = 0; // 0 = front camera, 1 = rear camera, 2 = baby cam
 int stw_menu_btn_state_last = 0;
 int stw_menu_output_flag = 0;
 int high_beam_lever_state = 0;
 //int reverse_state = 0;
 
 
+/*
+Camera switch state table:
+OUT1 OUT2
+1     1 = Show rear cam
+0     1 = Show front cam
+any   0 = Show baby cam
+*/
 
 static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   uint32_t ts = TIM2->CNT;
@@ -45,22 +52,28 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
       set_uja1023_output_bits(1 << 5);
       
       //if we're in reverse, we always want the rear camera up:
-      set_uja1023_output_bits(1 << 0); //show rear camera
+      set_uja1023_output_bits(1 << 0); //SW1 to show rear cam
+      set_uja1023_output_bits(1 << 1); //SW2 to show feed from SW1
       //puts(" Got Reverse\n");
       
     } else {
       //reverse_state = 0;
       clear_uja1023_output_bits(1 << 5);
       
-      //if we're in not in reverse and button state is 0, set output low (show front camera)
+      //if we're in not in reverse, use the button state to determine which camera to show
+      // 0 = front camera, 1 = rear camera, 2 = baby cam
       if (stw_menu_current_output_state == 0) {
-        clear_uja1023_output_bits(1 << 0); //show front camera
+        clear_uja1023_output_bits(1 << 0); //SW1 to show front cam
+        set_uja1023_output_bits(1 << 1); //SW2 to show feed from SW1
       }
-      
-      //if we're not in reverse and button state is 1, set the output high (show the rear camera)
-      else {
-        set_uja1023_output_bits(1 << 0); //show rear camera
-      } 
+      else if (stw_menu_current_output_state == 1) {
+        set_uja1023_output_bits(1 << 0); //SW1 to show rear cam
+        set_uja1023_output_bits(1 << 1); //SW2 to show feed from SW1
+      }
+      else if (stw_menu_current_output_state == 2) {
+        clear_uja1023_output_bits(1 << 0); //SW1 to front (doesn't matter, but prep for next state to minimize switching time)
+        clear_uja1023_output_bits(1 << 1); //SW2 to show baby cam
+      }
     }
     
     if (drive_state == 4) {
@@ -135,18 +148,16 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
         uint32_t stw_ts_elapsed = get_ts_elapsed(ts, stw_menu_btn_pressed_ts);
         if (stw_ts_elapsed > STW_MENU_BTN_HOLD_INTERVAL) {
           //user held the button, do stuff!
-          if (stw_menu_current_output_state == 0 && stw_menu_output_flag == 0) {
+          if (stw_menu_output_flag == 0) {
             stw_menu_output_flag = 1;
-            stw_menu_current_output_state = 1;
-            //set_uja1023_output_bits(1 << 5);
-            //puts("Menu Button held, setting output 5 HIGH\n");
-          }
-          else if (stw_menu_current_output_state == 1 && stw_menu_output_flag == 0) {
-            stw_menu_output_flag = 1;
-            stw_menu_current_output_state = 0;
-            //clear_uja1023_output_bits(1 << 5);
-            //puts("Menu Button held, setting output 5 LOW\n");
-          }
+            if (stw_menu_current_output_state < 2) {
+              stw_menu_current_output_state++;
+            }
+            else {
+              //go back to state 0 if we're >=2
+              stw_menu_current_output_state = 0;
+            }
+          }//only change state once per press! 
         } //held
       }
     } //stw menu button pressed
