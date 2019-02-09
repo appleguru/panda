@@ -1,16 +1,24 @@
 #include "../drivers/uja1023.h"
 
 const int32_t STW_MENU_BTN_HOLD_INTERVAL = 750000; //75ms, how long before we recognize the user is  holding this steering wheel button down
+const int32_t HDMI_SWITCH_BUTTON_HOLD_DURATION = 500000; //50ms, how long to press the button on the hdmi switcher for when the input changes
 
 uint32_t stw_menu_btn_pressed_ts = 0;
-int stw_menu_current_output_state = 0; // 0 = front camera, 1 = rear camera, 2 = HDMI
+uint32_t hdmi_btn_pressed_ts = 0;
+int stw_menu_current_output_state = 0; // 0 = rear camera, 1 = HDMI1, 2 = HDMI2, 3 = HDMI3, 4 = HDMI4 
 int stw_menu_btn_state_last = 0;
 int stw_menu_output_flag = 0;
+int hdmi_input_num = 0;
+int hdmi_input_change_in_progress = 0;
+
 
 static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   uint32_t ts = TIM2->CNT;
   
-  //Set UJA1023 outputs for camera swicther/etc.
+  if (hdmi_input_change_in_progress == 1 && ts > (hdmi_btn_pressed_ts + HDMI_SWITCH_BUTTON_HOLD_DURATION) {
+    hdmi_input_change_in_progress = 0;
+    clear_uja1023_output_bits(1 << hdmi_input_num);
+  }
   
   uint32_t addr;
   if (to_push->RIR & 4) {
@@ -26,9 +34,13 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   //0x118 is DI_torque2
   if (addr == 0x118) {
     int drive_state = (to_push->RDLR >> 12) & 0x7; //DI_gear : 12|3@1+
-    int brake_pressed = (to_push->RDLR & 0x8000) >> 15;
     int tesla_speed_mph = ((((((to_push->RDLR >> 24) & 0x0F) << 8) + (( to_push->RDLR >> 16) & 0xFF)) * 0.05 -25));
 
+    if (drive_state == 2) {
+      //we're in reverse, show the rear camera
+      //puts(" Got Reverse\n");
+      //TODO: if we're in reverse and not already on the SERDES input, we need to generate a steering wheel button message and send to the HDMI switcher so that it switches from HDMI to SERDES. This is not trivial on stock panda
+    } //in reverse
   }
 
   //0x45 is STW_ACTN_RQ
@@ -46,11 +58,16 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
           //user held the button, do stuff!
           if (stw_menu_output_flag == 0) {
             stw_menu_output_flag = 1;
-            if (stw_menu_current_output_state < 2) {
+            if (stw_menu_current_output_state < 4) {
               stw_menu_current_output_state++;
+              hdmi_input_num = stw_menu_current_output_state - 1;
+              // change input on HDMI switcher
+              set_uja1023_output_bits(1 << hdmi_input_num);
+              hdmi_btn_pressed_ts = TIM2->CNT;
+              hdmi_input_change_in_progress = 1;
             }
             else {
-              //go back to state 0 if we're >=2
+              //go back to state 0 if we're >=4
               stw_menu_current_output_state = 0;
             }
           }//only change state once per press! 
@@ -86,14 +103,15 @@ static int tesla_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
 
   if (bus_num == 0) {
     // intercept and squash some of the menu button commands
+    //stw_menu_current_output_state: 0 = rear camera, 1 = HDMI1, 2 = HDMI2, 3 = HDMI3, 4 = HDMI4 
+    // drive_state 2 is reverse
     if (addr == 0x45) {
-      if (stw_menu_current_output_state >= 1) {
-        //if we're on reverse (1) forward steering wheel messages to the HDMI switcher
-        // This means HDMI switcher will switch inputs when going from rear cam to HDMI, and also from HDMI to front cam
+      if (stw_menu_current_output_state == 0 || stw_menu_current_output_state == 4) {
+        // if we're transitioning from an HDMI input to the rear cam or from the rear cam to the serdes, pass the menu button messages along to the HDMI switcher
         return 1;
-        }
+      }
       else {
-        //if the current output state is the forward camera (0), don't forward steering wheel button messages to the HDMI switcher
+        // if we're just changing HDMI inputs, squash the button presses so the HDMI switcher stays on HDMI input
         return -1;
       }
     } //STW ACT REQ
