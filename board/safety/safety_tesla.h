@@ -52,12 +52,12 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
       //reverse_state = 0;
       clear_uja1023_output_bits(1 << 5);
       
-      //if we're in not in reverse and button state is 0, set output low (show front camera)
-      if (stw_menu_current_output_state == 0) {
+      //if we're in not in reverse and button state is 0 or our speed is 5mph or less set output low (show front camera)
+      if (stw_menu_current_output_state == 0 || tesla_speed_mph <= 5 ) {
         clear_uja1023_output_bits(1 << 0); //show front camera
       }
       
-      //if we're not in reverse and button state is 1, set the output high (show the rear camera)
+      //if we're not in reverse, and button state is 1 or we're going over 5mph, set the output high (show the rear camera)
       else {
         set_uja1023_output_bits(1 << 0); //show rear camera
       } 
@@ -126,7 +126,7 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
       clear_uja1023_output_bits(1 << 4);
     }
     
-    if (stw_menu_button == 1) {
+    if (stw_rt_scroll_wheel == 1) {
       //menu button is pushed, if it wasn't last time, set the initial timestamp
       if (stw_menu_btn_state_last == 0) {
         stw_menu_btn_state_last = 1;
@@ -151,7 +151,7 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
         } //held
       }
     } //stw menu button pressed
-    else if (stw_menu_button == 0) {
+    else if (stw_rt_scroll_wheel == 0) {
       stw_menu_output_flag = 0;
       stw_menu_btn_state_last = 0;
     }
