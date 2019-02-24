@@ -105,6 +105,7 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   if (addr == 0x45) {
     int turn_signal_lever = (to_push->RDLR >> 16) & 0x3; //TurnIndLvr_Stat : 16|2@1+
     int stw_menu_button = (to_push->RDHR >> 5) & 0x1; //StW_Sw05_Psd : 37|1@1+
+    int stw_rt_scroll_wheel = (to_push->RDHR >> 4) & 0x1; //StW_Sw04_Psd : 36|1@1+
     high_beam_lever_state = (to_push->RDLR >> 18) & 0x3; //SG_ HiBmLvr_Stat : 18|2@1+ 
     
     //TurnIndLvr_Stat 3 "SNA" 2 "RIGHT" 1 "LEFT" 0 "IDLE" ;
