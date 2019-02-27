@@ -105,7 +105,8 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   if (addr == 0x45) {
     int turn_signal_lever = (to_push->RDLR >> 16) & 0x3; //TurnIndLvr_Stat : 16|2@1+
     int stw_menu_button = (to_push->RDHR >> 5) & 0x1; //StW_Sw05_Psd : 37|1@1+
-    int stw_rt_scroll_wheel = (to_push->RDHR >> 4) & 0x1; //StW_Sw04_Psd : 36|1@1+
+    //int stw_rt_scroll_wheel = (to_push->RDHR >> 4) & 0x1; //StW_Sw04_Psd : 36|1@1+
+    int stw_left_scroll_wheel = (to_push->RDHR >> 1) & 0x1; //StW_Sw01_Psd : 33|1@1+
     high_beam_lever_state = (to_push->RDLR >> 18) & 0x3; //SG_ HiBmLvr_Stat : 18|2@1+ 
     
     //TurnIndLvr_Stat 3 "SNA" 2 "RIGHT" 1 "LEFT" 0 "IDLE" ;
@@ -126,7 +127,7 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
       clear_uja1023_output_bits(1 << 4);
     }
     
-    if (stw_rt_scroll_wheel == 1) {
+    if (stw_left_scroll_wheel == 1) {
       //menu button is pushed, if it wasn't last time, set the initial timestamp
       if (stw_menu_btn_state_last == 0) {
         stw_menu_btn_state_last = 1;
@@ -151,7 +152,7 @@ static void tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
         } //held
       }
     } //stw menu button pressed
-    else if (stw_rt_scroll_wheel == 0) {
+    else if (stw_left_scroll_wheel == 0) {
       stw_menu_output_flag = 0;
       stw_menu_btn_state_last = 0;
     }
